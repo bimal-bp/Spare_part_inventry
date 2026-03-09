@@ -28,6 +28,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
         h1 small {
             font-size: 0.9rem;
@@ -76,7 +77,6 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
-        /* two column layout */
         .row-split {
             display: flex;
             gap: 26px;
@@ -226,6 +226,8 @@
         .low-stock {
             background: #fee2d9;
             color: #b13e00;
+            padding: 2px 10px;
+            border-radius: 30px;
         }
         .clear-btn {
             background: none;
@@ -244,6 +246,30 @@
             color: #194d33;
             font-weight: 500;
             border: 1px solid #b7d5b7;
+        }
+        /* small print */
+        .report-note {
+            background: #fbf7f0;
+            border-left: 6px solid #e67e22;
+            padding: 18px 24px;
+            border-radius: 30px;
+            margin-top: 32px;
+            font-size: 0.95rem;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.02);
+        }
+        .report-note h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-weight: 600;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .report-item {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 12px 0;
         }
     </style>
 </head>
@@ -321,6 +347,17 @@
             <button class="clear-btn" id="clearHistoryBtn">clear history (local)</button>
         </div>
     </div>
+
+    <!--  ==========  REPORT SECTION (as required) ==========  -->
+    <div class="report-note" id="reportSection">
+        <h3>📄 FLEET USAGE REPORT (last 7 days) <span style="font-size:0.8rem; background: #e67e22; color:white; padding:4px 16px; border-radius:60px;">generated from history</span></h3>
+        <div id="reportContent">
+            <!-- dynamic report injected via js -->
+            <span style="color:#4b6584;">Loading report based on usage entries...</span>
+        </div>
+        <p style="font-size:0.85rem; margin-top:12px;">✔ Report includes part, vehicle, date and stock after use. Low stock items (≤2) flagged.</p>
+    </div>
+
     <div class="footer-tip">
         ⚙️ <strong>how it works:</strong> choose a part from dropdown → date & vehicle → click USE. Stock updates instantly.
         Every usage appears in history with part name, vehicle, date and stock after use.
@@ -372,7 +409,7 @@
         const tbody = document.getElementById('partMasterBody');
         let html = '';
         parts.forEach(p => {
-            const lowClass = p.stock <= 2 ? 'low-stock' : '';  // simple low threshold 2 (can be custom)
+            const lowClass = p.stock <= 2 ? 'low-stock' : '';  // simple low threshold 2
             html += `<tr>
                 <td><span class="badge-part">${p.code}</span></td>
                 <td><strong>${p.name}</strong></td>
@@ -457,6 +494,44 @@
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
 
+    // --------------  REPORT: last 7 days summary (simple) ------------
+    function generateReport() {
+        const container = document.getElementById('reportContent');
+        if (usageHistory.length === 0) {
+            container.innerHTML = '<span style="color:#7f8c8d;">No usage entries yet. Use parts to generate report.</span>';
+            return;
+        }
+
+        // last 7 days filter
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+
+        const recentEntries = usageHistory.filter(entry => {
+            if (!entry.date) return false;
+            const d = new Date(entry.date);
+            return d >= sevenDaysAgo && d <= today;
+        }).sort((a,b) => new Date(b.date) - new Date(a.date)); // newest first
+
+        if (recentEntries.length === 0) {
+            container.innerHTML = '<span style="color:#7f8c8d;">No part usage recorded in the last 7 days.</span>';
+            return;
+        }
+
+        let reportHtml = `<div style="display:flex; flex-direction: column; gap:14px;">`;
+        recentEntries.forEach(entry => {
+            const lowFlag = entry.stockAfter <= 2 ? '🔴 low stock now' : '';
+            reportHtml += `<div style="background:#ffffffd6; border-radius:50px; padding:12px 22px; border:1px solid #e6dac8; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center;">
+                <span><strong>${entry.partName}</strong> (${entry.partCode})</span>
+                <span style="background:#f0e9dd; padding:2px 18px; border-radius:40px;">🚛 ${entry.vehicle}</span>
+                <span>📆 ${entry.date}</span>
+                <span>📦 after use: ${entry.stockAfter} ${entry.unit} ${lowFlag}</span>
+            </div>`;
+        });
+        reportHtml += `</div><p style="margin-top:14px;">🔔 Low stock threshold ≤ 2. Total recent uses: ${recentEntries.length}</p>`;
+        container.innerHTML = reportHtml;
+    }
+
     // record usage: subtract 1 stock (if >=1)
     function recordUsage() {
         const select = document.getElementById('partSelectDropdown');
@@ -492,6 +567,7 @@
         renderHistory();
         updateStats();
         updateSelectedHint();
+        generateReport();          // <-- update report after usage
     }
 
     // add new part (simple prompt)
@@ -501,7 +577,7 @@
         const name = prompt('Enter part name:', 'New brake part');
         if (!name) return;
         const unit = prompt('Unit (pcs/litre/set):', 'pcs') || 'pcs';
-        const stock = parseInt(prompt('Initial stock quantity:', '2') || '2', 10);
+        let stock = parseInt(prompt('Initial stock quantity:', '2') || '2', 10);
         if (isNaN(stock)) stock = 0;
         const newPart = {
             id: generatePartId(),
@@ -512,9 +588,8 @@
         };
         parts.push(newPart);
         saveToStorage();
-        renderPartMaster();
-        renderDropdown();
-        updateStats();
+        renderAll();
+        generateReport();
     }
 
     // reset demo (overwrite with initial)
@@ -536,6 +611,7 @@
         usageHistory = [];
         saveToStorage();
         renderAll();
+        generateReport();
     }
 
     function clearHistory() {
@@ -544,6 +620,7 @@
             saveToStorage();
             renderHistory();
             updateStats();
+            generateReport();   // update report
         }
     }
 
@@ -553,6 +630,7 @@
         renderHistory();
         updateStats();
         updateSelectedHint();
+        generateReport(); // always refresh report
     }
 
     // set today's date as default in date input
