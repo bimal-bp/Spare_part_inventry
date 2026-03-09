@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tipper parts usage · stock & history (12 tippers)</title>
+    <title>Tipper parts · stock & usage (12 tippers)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -145,6 +145,23 @@
             align-items: center;
             margin: 15px 0 8px;
         }
+        .qty-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 5px 10px 5px 20px;
+            border-radius: 60px;
+            border: 1px solid #cbd6e4;
+        }
+        .qty-group input {
+            width: 80px;
+            text-align: center;
+            padding: 10px 6px;
+            border: none;
+            background: #f1f7fd;
+            border-radius: 40px;
+        }
         .btn {
             background: white;
             border: 1px solid #b9c8da;
@@ -172,10 +189,16 @@
         .btn-outline:hover {
             background: #edf2f9;
         }
+        .btn-download {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 12px;
+            font-size: 0.9rem;
         }
         th {
             text-align: left;
@@ -187,7 +210,7 @@
             border-bottom: 2px solid #d7e0e8;
         }
         td {
-            padding: 14px 6px;
+            padding: 12px 6px;
             border-bottom: 1px solid #e7edf5;
         }
         .badge-part {
@@ -228,6 +251,7 @@
             color: #b13e00;
             padding: 2px 10px;
             border-radius: 30px;
+            font-weight: 600;
         }
         .clear-btn {
             background: none;
@@ -247,7 +271,6 @@
             font-weight: 500;
             border: 1px solid #b7d5b7;
         }
-        /* small print */
         .report-note {
             background: #fbf7f0;
             border-left: 6px solid #e67e22;
@@ -264,12 +287,24 @@
             display: flex;
             gap: 12px;
             align-items: center;
+            flex-wrap: wrap;
         }
         .report-item {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
             margin: 12px 0;
+        }
+        .part-meta {
+            font-size: 0.8rem;
+            color: #4b6f8c;
+            display: block;
+        }
+        .vendor-price {
+            background: #e8f0fa;
+            border-radius: 30px;
+            padding: 2px 16px;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -278,10 +313,10 @@
     <h1>
         🚛 TIPPER PARTS STOCK & USAGE
         <small>12 tippers fleet</small>
-        <span class="fleet-badge">entry → use → log</span>
+        <span class="fleet-badge">last purchase · vendor · price</span>
     </h1>
 
-    <!-- stats summary -->
+    <!-- stats summary (removed extra buttons, just keep numbers) -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-label">total parts</div>
@@ -298,49 +333,51 @@
         </div>
     </div>
 
-    <!-- MAIN ROW: left = part list + current stock, right = usage form + history -->
+    <!-- MAIN ROW: left = parts with new fields, right = usage + history -->
     <div class="row-split">
-        <!-- LEFT CARD: part master / current stock (without columns: vehicle,location,min,max, action column) -->
+        <!-- LEFT CARD: part master includes last purchase, vendor, price -->
         <div class="card">
-            <h2>📋 CURRENT SPARE PARTS</h2>
-            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong> (stock & details)</p>
+            <h2>📋 SPARE PARTS (with last purchase details)</h2>
+            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong> – stock & purchase info</p>
             <table>
                 <thead>
-                    <tr><th>Part code</th><th>Part name</th><th>Current stock</th><th>Unit</th></tr>
+                    <tr><th>Part code</th><th>Name / last vendor</th><th>Stock</th><th>Last price</th><th>Purch date</th></tr>
                 </thead>
                 <tbody id="partMasterBody">
                     <!-- filled from js -->
                 </tbody>
             </table>
-            <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="btn btn-outline" id="addNewPartBtn">➕ add new part</button>
-                <button class="btn btn-outline" id="resetDemoBtn">⟲ reset demo</button>
-            </div>
+            <!-- no extra buttons – only static display -->
         </div>
 
-        <!-- RIGHT CARD: usage entry & history dropdown -->
+        <!-- RIGHT CARD: usage entry + history -->
         <div class="card">
             <h2>🔧 RECORD PART USAGE</h2>
             <div class="use-form">
                 <div class="select-group">
-                    <label>🔽 1. Select part used (dropdown):</label>
+                    <label>🔽 1. Select part:</label>
                     <select id="partSelectDropdown" size="5" style="width:100%; border-radius:20px; padding:10px;">
                         <!-- dynamic options -->
                     </select>
                 </div>
                 <div class="inline-group">
                     <input type="date" id="usageDate" style="flex:2;" value="">
-                    <input type="text" id="vehicleUsed" placeholder="e.g. Tipper #07" style="flex:2;" value="Tipper 03">
+                    <input type="text" id="vehicleUsed" placeholder="Tipper #" style="flex:2;" value="Tipper 03">
+                </div>
+                <!-- quantity selector -->
+                <div class="qty-group" style="margin-top:10px;">
+                    <span style="font-weight:500;">🔢 Quantity used:</span>
+                    <input type="number" id="usedQty" min="1" value="1" step="1" style="width:90px;">
                 </div>
                 <div style="display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;">
                     <button class="btn btn-primary" id="recordUseBtn">✅ USE selected part</button>
                     <span id="selectedPartHint" style="align-self:center; background:#ffe6d5; border-radius:40px; padding:6px 18px;">stock: --</span>
                 </div>
-                <p style="margin:16px 0 6px; font-size:0.9rem; color:#2c3e50;">⚡ current stock will decrease, entry saved in history.</p>
+                <p style="margin:16px 0 6px; font-size:0.9rem; color:#2c3e50;">⚡ stock decreases, entry saved.</p>
             </div>
 
             <!-- usage history -->
-            <h2 style="margin-top:24px;">📜 USAGE HISTORY (last uses)</h2>
+            <h2 style="margin-top:24px;">📜 USAGE HISTORY</h2>
             <div id="historyContainer" style="max-height:300px; overflow-y:auto; padding-right:6px;">
                 <!-- dynamic history cards -->
             </div>
@@ -348,47 +385,49 @@
         </div>
     </div>
 
-    <!--  ==========  REPORT SECTION (as required) ==========  -->
+    <!--  REPORT SECTION: last 7 days + download button  -->
     <div class="report-note" id="reportSection">
-        <h3>📄 FLEET USAGE REPORT (last 7 days) <span style="font-size:0.8rem; background: #e67e22; color:white; padding:4px 16px; border-radius:60px;">generated from history</span></h3>
+        <h3>
+            📄 FLEET USAGE REPORT (last 7 days)
+            <span style="font-size:0.8rem; background: #e67e22; color:white; padding:4px 16px; border-radius:60px;">generated from history</span>
+            <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
+        </h3>
         <div id="reportContent">
-            <!-- dynamic report injected via js -->
             <span style="color:#4b6584;">Loading report based on usage entries...</span>
         </div>
-        <p style="font-size:0.85rem; margin-top:12px;">✔ Report includes part, vehicle, date and stock after use. Low stock items (≤2) flagged.</p>
+        <p style="font-size:0.85rem; margin-top:12px;">✔ Report includes part, vehicle, date, quantity, and stock after use. Low stock (≤2) flagged.</p>
     </div>
 
     <div class="footer-tip">
-        ⚙️ <strong>how it works:</strong> choose a part from dropdown → date & vehicle → click USE. Stock updates instantly.
-        Every usage appears in history with part name, vehicle, date and stock after use.
+        ⚙️ <strong>updates:</strong> purchase date, vendor & price now shown per part. Use quantity field for oil etc. Download report button active.
     </div>
 </div>
 
 <script>
 (function() {
-    // ------- data --------
+    // ----- extended parts with vendor, lastPurchaseDate, price -----
     let parts = [
-        { id: 'p1', code: 'TIP-FIL-001', name: 'Fuel filter LF16001', stock: 8, unit: 'pcs' },
-        { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre' },
-        { id: 'p3', code: 'TIP-BEL-003', name: 'Fan belt 8PK', stock: 2, unit: 'pcs' },
-        { id: 'p4', code: 'TIP-AIR-022', name: 'Air filter primary', stock: 3, unit: 'pcs' },
-        { id: 'p5', code: 'TIP-BRK-101', name: 'Brake chamber rear', stock: 2, unit: 'pcs' },
-        { id: 'p6', code: 'TIP-CLP-001', name: 'Clutch plate 330mm', stock: 1, unit: 'pcs' },
-        { id: 'p7', code: 'TIP-HYD-880', name: 'Hydraulic oil 20L drum', stock: 2, unit: 'drum' },
-        { id: 'p8', code: 'TIP-ALT-07', name: 'Alternator 24V', stock: 2, unit: 'pcs' },
-        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set' },
-        { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs' },
-        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre tube 10.00R20', stock: 4, unit: 'pcs' },
-        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket' }
+        { id: 'p1', code: 'TIP-FIL-001', name: 'Fuel filter LF16001', stock: 8, unit: 'pcs', vendor: 'FilterCorp', lastPrice: 24.50, lastPurchaseDate: '2025-02-10' },
+        { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre', vendor: 'LubriFast', lastPrice: 4.20, lastPurchaseDate: '2025-03-01' },
+        { id: 'p3', code: 'TIP-BEL-003', name: 'Fan belt 8PK', stock: 2, unit: 'pcs', vendor: 'BeltMaster', lastPrice: 18.90, lastPurchaseDate: '2025-01-18' },
+        { id: 'p4', code: 'TIP-AIR-022', name: 'Air filter primary', stock: 3, unit: 'pcs', vendor: 'AirFlow', lastPrice: 37.00, lastPurchaseDate: '2025-02-22' },
+        { id: 'p5', code: 'TIP-BRK-101', name: 'Brake chamber rear', stock: 2, unit: 'pcs', vendor: 'BrakeTech', lastPrice: 89.50, lastPurchaseDate: '2025-03-10' },
+        { id: 'p6', code: 'TIP-CLP-001', name: 'Clutch plate 330mm', stock: 1, unit: 'pcs', vendor: 'TransParts', lastPrice: 145.00, lastPurchaseDate: '2025-02-05' },
+        { id: 'p7', code: 'TIP-HYD-880', name: 'Hydraulic oil 20L drum', stock: 2, unit: 'drum', vendor: 'Hydraulics Inc', lastPrice: 210.00, lastPurchaseDate: '2025-03-14' },
+        { id: 'p8', code: 'TIP-ALT-07', name: 'Alternator 24V', stock: 2, unit: 'pcs', vendor: 'ElectroDrive', lastPrice: 310.00, lastPurchaseDate: '2024-12-01' },
+        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set', vendor: 'SuspensionX', lastPrice: 42.30, lastPurchaseDate: '2025-02-28' },
+        { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs', vendor: 'LightLux', lastPrice: 12.75, lastPurchaseDate: '2025-03-20' },
+        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre tube 10.00R20', stock: 4, unit: 'pcs', vendor: 'RubberCo', lastPrice: 55.00, lastPurchaseDate: '2025-01-12' },
+        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: 'GreaseMonkey', lastPrice: 38.00, lastPurchaseDate: '2025-03-05' }
     ];
 
-    // history array: { partId, partCode, partName, vehicle, date, stockAfter, unit }
+    // history array: now includes quantity & price fields at time of usage (we store price too)
     let usageHistory = [];
 
-    // Helper to load from localStorage (optional)
+    // Load from storage
     function loadFromStorage() {
-        const savedParts = localStorage.getItem('tipper_parts');
-        const savedHistory = localStorage.getItem('tipper_history');
+        const savedParts = localStorage.getItem('tipper_parts_v2');
+        const savedHistory = localStorage.getItem('tipper_history_v2');
         if (savedParts) {
             try { parts = JSON.parse(savedParts); } catch(e){}
         }
@@ -397,30 +436,31 @@
         }
     }
     function saveToStorage() {
-        localStorage.setItem('tipper_parts', JSON.stringify(parts));
-        localStorage.setItem('tipper_history', JSON.stringify(usageHistory));
+        localStorage.setItem('tipper_parts_v2', JSON.stringify(parts));
+        localStorage.setItem('tipper_history_v2', JSON.stringify(usageHistory));
     }
 
-    // generate new part id
-    function generatePartId() { return 'part_' + Date.now() + '_' + Math.random().toString(36).substring(2,6); }
-
-    // render part master (only code, name, stock, unit)
+    // render part master with new fields: vendor, last price, last purchase date
     function renderPartMaster() {
         const tbody = document.getElementById('partMasterBody');
         let html = '';
         parts.forEach(p => {
-            const lowClass = p.stock <= 2 ? 'low-stock' : '';  // simple low threshold 2
+            const lowClass = p.stock <= 2 ? 'low-stock' : '';
             html += `<tr>
                 <td><span class="badge-part">${p.code}</span></td>
-                <td><strong>${p.name}</strong></td>
+                <td>
+                    <strong>${p.name}</strong><br>
+                    <span class="part-meta">🗂️ ${p.vendor || '—'}</span>
+                </td>
                 <td class="${lowClass}" style="font-weight:600;">${p.stock} ${p.unit}</td>
-                <td>${p.unit}</td>
+                <td>$${p.lastPrice?.toFixed(2) || '0.00'}</td>
+                <td>${p.lastPurchaseDate || '—'}</td>
             </tr>`;
         });
         tbody.innerHTML = html;
     }
 
-    // render dropdown options (part select)
+    // render dropdown with stock & unit
     function renderDropdown() {
         const select = document.getElementById('partSelectDropdown');
         let options = '';
@@ -434,7 +474,6 @@
         }
     }
 
-    // update hint label when selection changes
     function updateSelectedHint() {
         const select = document.getElementById('partSelectDropdown');
         const selectedOpt = select.options[select.selectedIndex];
@@ -448,14 +487,13 @@
         }
     }
 
-    // render usage history cards (last 10)
+    // render usage history (last 15)
     function renderHistory() {
         const container = document.getElementById('historyContainer');
         if (usageHistory.length === 0) {
-            container.innerHTML = '<div style="background:#f2f6fa; padding:20px; border-radius:28px; color:#556b82;">📭 No usage recorded yet. Use a part to log.</div>';
+            container.innerHTML = '<div style="background:#f2f6fa; padding:20px; border-radius:28px; color:#556b82;">📭 No usage recorded yet.</div>';
             return;
         }
-        // show latest first (reverse)
         const reversed = [...usageHistory].reverse().slice(0, 15);
         let html = '';
         reversed.forEach(entry => {
@@ -466,15 +504,17 @@
                     <span class="history-date">📅 ${dateStr}</span>
                 </div>
                 <div style="margin-top:8px; display:flex; gap:20px; flex-wrap:wrap;">
-                    <span>🚛 vehicle: <strong>${entry.vehicle || '—'}</strong></span>
+                    <span>🚛 ${entry.vehicle || '—'}</span>
+                    <span>🔢 qty used: <strong>${entry.quantity || 1}</strong></span>
                     <span>📉 stock after: <strong>${entry.stockAfter} ${entry.unit}</strong></span>
                 </div>
+                <div style="margin-top:4px; font-size:0.8rem; color:#3b5e7a;">💵 price at use: $${entry.priceAtUse?.toFixed(2) || '0.00'}</div>
             </div>`;
         });
         container.innerHTML = html;
     }
 
-    // update stats: total parts, low stock (stock<=2), monthly usage (current month)
+    // stats
     function updateStats() {
         document.getElementById('totalParts').innerText = parts.length;
         const low = parts.filter(p => p.stock <= 2).length;
@@ -494,24 +534,21 @@
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
 
-    // --------------  REPORT: last 7 days summary (simple) ------------
+    // generate report (last 7 days) + update report div
     function generateReport() {
         const container = document.getElementById('reportContent');
         if (usageHistory.length === 0) {
             container.innerHTML = '<span style="color:#7f8c8d;">No usage entries yet. Use parts to generate report.</span>';
             return;
         }
-
-        // last 7 days filter
         const today = new Date();
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(today.getDate() - 7);
-
         const recentEntries = usageHistory.filter(entry => {
             if (!entry.date) return false;
             const d = new Date(entry.date);
             return d >= sevenDaysAgo && d <= today;
-        }).sort((a,b) => new Date(b.date) - new Date(a.date)); // newest first
+        }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
         if (recentEntries.length === 0) {
             container.innerHTML = '<span style="color:#7f8c8d;">No part usage recorded in the last 7 days.</span>';
@@ -523,106 +560,101 @@
             const lowFlag = entry.stockAfter <= 2 ? '🔴 low stock now' : '';
             reportHtml += `<div style="background:#ffffffd6; border-radius:50px; padding:12px 22px; border:1px solid #e6dac8; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center;">
                 <span><strong>${entry.partName}</strong> (${entry.partCode})</span>
-                <span style="background:#f0e9dd; padding:2px 18px; border-radius:40px;">🚛 ${entry.vehicle}</span>
+                <span>🚛 ${entry.vehicle}</span>
                 <span>📆 ${entry.date}</span>
-                <span>📦 after use: ${entry.stockAfter} ${entry.unit} ${lowFlag}</span>
+                <span>📦 after: ${entry.stockAfter} ${entry.unit} ${lowFlag}</span>
             </div>`;
         });
-        reportHtml += `</div><p style="margin-top:14px;">🔔 Low stock threshold ≤ 2. Total recent uses: ${recentEntries.length}</p>`;
+        reportHtml += `</div><p style="margin-top:14px;">🔔 Low stock ≤ 2. Total recent uses: ${recentEntries.length}</p>`;
         container.innerHTML = reportHtml;
     }
 
-    // record usage: subtract 1 stock (if >=1)
+    // download report as simple .txt
+    function downloadReport() {
+        const todayStr = new Date().toISOString().slice(0,10);
+        let content = `TIPPER PARTS USAGE REPORT (last 7 days) - ${todayStr}\n`;
+        content += `============================================\n`;
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        const recent = usageHistory.filter(e => {
+            if (!e.date) return false;
+            const d = new Date(e.date);
+            return d >= sevenDaysAgo;
+        }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        if (recent.length===0) content += 'No usage in last 7 days.\n';
+        else {
+            recent.forEach(e => {
+                content += `${e.date} | ${e.partCode} | ${e.partName} | vehicle: ${e.vehicle} | qty: ${e.quantity||1} | stock after: ${e.stockAfter} ${e.unit} | price: $${e.priceAtUse?.toFixed(2)||'0.00'}\n`;
+            });
+        }
+        content += `\n -- generated from tipper fleet --`;
+        const blob = new Blob([content], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tipper_report_${todayStr}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // record usage with quantity
     function recordUsage() {
         const select = document.getElementById('partSelectDropdown');
         const selectedId = select.value;
-        if (!selectedId) { alert('Select a part from dropdown'); return; }
+        if (!selectedId) { alert('Select a part'); return; }
         const part = parts.find(p => p.id === selectedId);
         if (!part) return;
-        if (part.stock <= 0) { alert('❌ Stock is zero! cannot use. add stock manually via edit?'); return; }
 
-        const vehicle = document.getElementById('vehicleUsed').value.trim() || 'unknown tipper';
+        let qty = parseInt(document.getElementById('usedQty').value, 10);
+        if (isNaN(qty) || qty < 1) qty = 1;
+
+        if (part.stock < qty) { alert(`❌ Only ${part.stock} ${part.unit} available.`); return; }
+
+        const vehicle = document.getElementById('vehicleUsed').value.trim() || 'unknown';
         const date = document.getElementById('usageDate').value;
         if (!date) { alert('Please select usage date'); return; }
 
         // decrease stock
-        part.stock = Math.max(0, part.stock - 1);
+        part.stock -= qty;
         const stockAfter = part.stock;
 
-        // push to history
+        // push to history (store quantity and price at use)
         usageHistory.push({
             partId: part.id,
             partCode: part.code,
             partName: part.name,
             vehicle: vehicle,
             date: date,
+            quantity: qty,
             stockAfter: stockAfter,
-            unit: part.unit
+            unit: part.unit,
+            priceAtUse: part.lastPrice || 0
         });
 
-        // persist & refresh
         saveToStorage();
         renderPartMaster();
         renderDropdown();
         renderHistory();
         updateStats();
         updateSelectedHint();
-        generateReport();          // <-- update report after usage
-    }
-
-    // add new part (simple prompt)
-    function addNewPart() {
-        const code = prompt('Enter part code (e.g. TIP-NEW-123):', 'TIP-NEW-');
-        if (!code) return;
-        const name = prompt('Enter part name:', 'New brake part');
-        if (!name) return;
-        const unit = prompt('Unit (pcs/litre/set):', 'pcs') || 'pcs';
-        let stock = parseInt(prompt('Initial stock quantity:', '2') || '2', 10);
-        if (isNaN(stock)) stock = 0;
-        const newPart = {
-            id: generatePartId(),
-            code: code,
-            name: name,
-            stock: stock,
-            unit: unit
-        };
-        parts.push(newPart);
-        saveToStorage();
-        renderAll();
         generateReport();
     }
 
-    // reset demo (overwrite with initial)
-    function resetDemo() {
-        parts = [
-            { id: 'p1', code: 'TIP-FIL-001', name: 'Fuel filter LF16001', stock: 8, unit: 'pcs' },
-            { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre' },
-            { id: 'p3', code: 'TIP-BEL-003', name: 'Fan belt 8PK', stock: 2, unit: 'pcs' },
-            { id: 'p4', code: 'TIP-AIR-022', name: 'Air filter primary', stock: 3, unit: 'pcs' },
-            { id: 'p5', code: 'TIP-BRK-101', name: 'Brake chamber rear', stock: 2, unit: 'pcs' },
-            { id: 'p6', code: 'TIP-CLP-001', name: 'Clutch plate 330mm', stock: 1, unit: 'pcs' },
-            { id: 'p7', code: 'TIP-HYD-880', name: 'Hydraulic oil 20L drum', stock: 2, unit: 'drum' },
-            { id: 'p8', code: 'TIP-ALT-07', name: 'Alternator 24V', stock: 2, unit: 'pcs' },
-            { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set' },
-            { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs' },
-            { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre tube 10.00R20', stock: 4, unit: 'pcs' },
-            { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket' }
-        ];
-        usageHistory = [];
-        saveToStorage();
-        renderAll();
-        generateReport();
-    }
-
+    // clear history only
     function clearHistory() {
         if (confirm('Clear all usage history? (stock parts unchanged)')) {
             usageHistory = [];
             saveToStorage();
             renderHistory();
             updateStats();
-            generateReport();   // update report
+            generateReport();
         }
     }
+
+    // reset demo (if needed, but we don't have buttons for reset – but we keep internal for completeness)
+    // we don't attach reset button, but keep data initial as loaded.
 
     function renderAll() {
         renderPartMaster();
@@ -630,10 +662,9 @@
         renderHistory();
         updateStats();
         updateSelectedHint();
-        generateReport(); // always refresh report
+        generateReport();
     }
 
-    // set today's date as default in date input
     function setDefaultDate() {
         const today = new Date().toISOString().slice(0,10);
         document.getElementById('usageDate').value = today;
@@ -647,9 +678,8 @@
 
         document.getElementById('partSelectDropdown').addEventListener('change', updateSelectedHint);
         document.getElementById('recordUseBtn').addEventListener('click', recordUsage);
-        document.getElementById('addNewPartBtn').addEventListener('click', addNewPart);
-        document.getElementById('resetDemoBtn').addEventListener('click', resetDemo);
         document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+        document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
     };
 })();
 </script>
