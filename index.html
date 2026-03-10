@@ -115,6 +115,17 @@
         .tipper-selector select {
             border: none; background: transparent; font-weight: 600; padding: 8px 16px 8px 8px; color: #1e3a5f;
         }
+        /* report formatting exactly as requested */
+        .report-lines {
+            background: #f6faff; border-radius: 28px; padding: 14px 22px;
+            white-space: pre-wrap; font-family: 'Courier New', monospace;
+            font-size: 0.95rem; border: 1px solid #b7cee8;
+        }
+        .tipper-sum-block {
+            margin-top: 16px; background: #e7f0fa; border-radius: 40px;
+            padding: 14px 22px; color: #1e3a5f;
+            white-space: pre-wrap; font-family: 'Courier New', monospace;
+        }
     </style>
 </head>
 <body>
@@ -124,7 +135,6 @@
         <span class="fleet-badge">12 tippers</span>
     </h1>
 
-    <!-- stats row + purchase summary lines -->
     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div class="stats-row" style="flex: 1; margin-bottom:0;">
             <div class="stat-card"><div class="stat-label">total parts</div><div class="stat-number" id="totalParts">0</div></div>
@@ -132,7 +142,6 @@
             <div class="stat-card"><div class="stat-label">used this month</div><div class="stat-number" id="monthlyUsage">0</div></div>
         </div>
     </div>
-    <!-- three last purchase lines always visible (vendor removed) -->
     <div class="purchase-summary-lines" id="purchaseLinesContainer">
         <div>🔹 21‑03‑2026 — total 34 parts —  ₹38484</div>
         <div>🔹 18‑03‑2026 — total 22 parts —  ₹21500</div>
@@ -173,7 +182,6 @@
                 </div>
                 <div class="inline-group">
                     <input type="date" id="usageDate" style="flex:2;" value="">
-                    <!-- TIPPER SELECTOR with 12 specific tippers -->
                     <div class="tipper-selector" style="flex:3;">
                         <span style="color:#1e5f7c;">🚛</span>
                         <select id="vehicleSelect">
@@ -210,18 +218,16 @@
         </div>
     </div>
 
-    <!-- REPORT SECTION: last 7 days + download, includes tipper-wise summary -->
+    <!-- REPORT SECTION: last 7 days + download, matches exact format requested -->
     <div class="report-note" id="reportSection">
         <h3>
             📄 FLEET USAGE REPORT (last 7 days)
             <span style="font-size:0.8rem; background: #1e5f7c; color:white; padding:4px 16px; border-radius:60px;">generated</span>
             <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
         </h3>
-        <div id="reportContent"><span style="color:#4b6584;">Loading report based on usage entries...</span></div>
-        <!-- new section: tipper wise sum (last 7 days) -->
-        <div id="tipperWiseSummary" style="margin-top:16px; background: #e7f0fa; border-radius: 40px; padding: 14px 22px; color: #1e3a5f;">
-            ⏳ Tipper wise consumption (last 7 days) will appear here.
-        </div>
+        <!-- report content mimics the style: date groups, tipper lines with cost, total recent, then tipper wise summary at bottom corner -->
+        <div id="reportContent" class="report-lines"></div>
+        <div id="tipperWiseSummary" class="tipper-sum-block"></div>
     </div>
 
     <div class="footer-tip">
@@ -231,10 +237,9 @@
 
 <script>
 (function() {
-    // Parts data: engine oil cost set to 36000 for 60 litres = ₹600 per litre.
     let parts = [
         { id: 'p1', code: 'TIP-FIL-001', name: 'Fuel filter LF16001', stock: 8, unit: 'pcs', vendor: '', lastPrice: 2450, lastPurchaseDate: '2025-02-10' },
-        { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre', vendor: '', lastPrice: 36000, lastPurchaseDate: '2025-03-01' },  // 60L for ₹36000
+        { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre', vendor: '', lastPrice: 36000, lastPurchaseDate: '2025-03-01' },
         { id: 'p3', code: 'TIP-BEL-003', name: 'Fan belt 8PK', stock: 2, unit: 'pcs', vendor: '', lastPrice: 1890, lastPurchaseDate: '2025-01-18' },
         { id: 'p4', code: 'TIP-AIR-022', name: 'Air filter primary', stock: 3, unit: 'pcs', vendor: '', lastPrice: 3700, lastPurchaseDate: '2025-02-22' },
         { id: 'p5', code: 'TIP-BRK-101', name: 'Brake chamber rear', stock: 2, unit: 'pcs', vendor: '', lastPrice: 8950, lastPurchaseDate: '2025-03-10' },
@@ -259,19 +264,16 @@
         localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
     }
 
-    // helper to format date DD-MM-YYYY
     function formatDateDDMMYYYY(dateStr) {
         if (!dateStr) return '—';
         try {
             let d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr; // fallback
+            if (isNaN(d.getTime())) return dateStr;
             let day = String(d.getDate()).padStart(2,'0');
             let month = String(d.getMonth()+1).padStart(2,'0');
             let year = d.getFullYear();
             return `${day}-${month}-${year}`;
-        } catch {
-            return dateStr;
-        }
+        } catch { return dateStr; }
     }
 
     function renderPartMaster() {
@@ -341,52 +343,45 @@
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
 
-    // generate report with date-wise grouping and tipper-wise sum for last 7 days — dates as DD-MM-YYYY
+    // generate report with EXACT format: date groups, then tipper-wise summary bottom right
     function generateReport() {
         const container = document.getElementById('reportContent');
         const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
         if (!usageHistory.length) { 
-            container.innerHTML = '<span>No entries yet.</span>';
-            tipperSummaryDiv.innerHTML = '⏳ No data for tipper wise.';
+            container.innerText = 'No entries yet.';
+            tipperSummaryDiv.innerText = '⏳ No data for tipper wise.';
             return;
         }
         const today = new Date(); 
         const sevenAgo = new Date(today); sevenAgo.setDate(today.getDate()-7);
-        const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(b.date)-new Date(a.date));
-        
-        if (!recent.length) { 
-            container.innerHTML = '<span>No usage last 7 days.</span>';
-            tipperSummaryDiv.innerHTML = '⏳ No tipper usage in last 7 days.';
-            return;
-        }
-
-        // Group by date for display (using formatted date string DD-MM-YYYY)
-        let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
-        const dateMap = new Map();
+        let recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date)); // ascending for grouping later (but we'll group)
+        // group by date string DD-MM-YYYY
+        const dateGroups = {};
         recent.forEach(e => {
-            const formatted = formatDateDDMMYYYY(e.date);
-            if (!dateMap.has(formatted)) dateMap.set(formatted, []);
-            dateMap.get(formatted).push(e);
+            const dStr = formatDateDDMMYYYY(e.date);
+            if (!dateGroups[dStr]) dateGroups[dStr] = [];
+            dateGroups[dStr].push(e);
         });
-        const sortedFormattedDates = Array.from(dateMap.keys()).sort((a,b) => {
-            // convert back to compare as dates DD-MM-YYYY -> YYYY-MM-DD
-            const parse = (s) => { let [d,m,y]=s.split('-'); return new Date(`${y}-${m}-${d}`); };
-            return parse(b) - parse(a);
+        // sort dates descending (most recent first) for report view
+        const sortedDates = Object.keys(dateGroups).sort((a,b) => {
+            let [da, ma, ya] = a.split('-');
+            let [db, mb, yb] = b.split('-');
+            return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`); // descending
         });
-        for (let d of sortedFormattedDates) {
-            const entries = dateMap.get(d);
-            html += `<div style="background:#ffffffd6; border-radius:50px; padding:10px 18px; margin-bottom:6px; border:1px solid #d6dcc8;">
-                <span style="font-weight:700;">📆 ${d}</span> (${entries.length} usage)`;
-            entries.forEach(e => {
-                let val = (e.priceAtUse * e.quantity).toFixed(2);
-                html += `<div style="margin-left:16px; display:flex; gap:12px; flex-wrap:wrap;"><span>🚛 ${e.vehicle}</span><span>${e.partName} qty:${e.quantity}</span><span> ₹${val}</span></div>`;
-            });
-            html += `</div>`;
-        }
-        html += `</div><p>total recent: ${recent.length}</p>`;
-        container.innerHTML = html;
 
-        // tipper wise sum for last 7 days
+        let reportLines = '';
+        for (let d of sortedDates) {
+            const entries = dateGroups[d];
+            reportLines += `📆 ${d} (${entries.length} usage)\n`;
+            entries.forEach(e => {
+                const usageVal = (e.priceAtUse * e.quantity).toFixed(2);
+                reportLines += `🚛 ${e.vehicle}\n${e.partName} qty:${e.quantity}\n₹${usageVal}\n`;
+            });
+        }
+        reportLines += `total recent: ${recent.length}\n`;
+        container.innerText = reportLines;
+
+        // tipper wise summary (last 7 days) with format: "Tipper 97 🔧 parts used: 2 | ₹8460.00"
         const tipperSum = {};
         recent.forEach(e => {
             const v = e.vehicle;
@@ -394,24 +389,41 @@
             tipperSum[v].count += e.quantity;
             tipperSum[v].totalCost += (e.priceAtUse * e.quantity);
         });
-        let tipHtml = '<div style="display:flex; flex-direction:column; gap:6px;">';
-        for (let [t, val] of Object.entries(tipperSum)) {
-            tipHtml += `<div><span style="display:inline-block; width:100px;">${t}</span> 🔧 parts used: ${val.count} | ₹${val.totalCost.toFixed(2)}</div>`;
-        }
-        tipHtml += '</div>';
-        tipperSummaryDiv.innerHTML = tipHtml;
+        let tipLines = '';
+        // sort tipper names for consistency
+        Object.keys(tipperSum).sort().forEach(t => {
+            tipLines += `${t} 🔧 parts used: ${tipperSum[t].count} | ₹${tipperSum[t].totalCost.toFixed(2)}\n`;
+        });
+        tipperSummaryDiv.innerText = tipLines || 'No tipper usage in last 7 days.';
     }
 
     function downloadReport() {
         const todayStr = new Date().toISOString().slice(0,10);
-        let content = `TIPPER REPORT (last 7d) ${formatDateDDMMYYYY(todayStr)} (₹ INR)\n================\n`;
         const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate()-7);
-        const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(b.date)-new Date(a.date));
-        if (!recent.length) content += 'No usage.\n';
-        else recent.forEach(e => {
-            const formattedDate = formatDateDDMMYYYY(e.date);
-            content += `${formattedDate} | ${e.partName} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter} | usage value: ₹${(e.priceAtUse*e.quantity).toFixed(2)}\n`;
+        const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date));
+        const dateGroups = {};
+        recent.forEach(e => { const dStr = formatDateDDMMYYYY(e.date); if (!dateGroups[dStr]) dateGroups[dStr] = []; dateGroups[dStr].push(e); });
+        const sortedDates = Object.keys(dateGroups).sort((a,b) => {
+            let [da, ma, ya] = a.split('-'); let [db, mb, yb] = b.split('-');
+            return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
         });
+        let content = `FLEET USAGE REPORT (last 7 days)\ngenerated\n⬇️ Download report (TXT)\n`;
+        for (let d of sortedDates) {
+            const entries = dateGroups[d];
+            content += `📆 ${d} (${entries.length} usage)\n`;
+            entries.forEach(e => {
+                const usageVal = (e.priceAtUse * e.quantity).toFixed(2);
+                content += `🚛 ${e.vehicle}\n${e.partName} qty:${e.quantity}\n₹${usageVal}\n`;
+            });
+        }
+        content += `total recent: ${recent.length}\n\n`;
+        // tipper wise summary
+        const tipperSum = {};
+        recent.forEach(e => { const v = e.vehicle; if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0 }; tipperSum[v].count += e.quantity; tipperSum[v].totalCost += (e.priceAtUse * e.quantity); });
+        Object.keys(tipperSum).sort().forEach(t => {
+            content += `${t} 🔧 parts used: ${tipperSum[t].count} | ₹${tipperSum[t].totalCost.toFixed(2)}\n`;
+        });
+
         const blob = new Blob([content], {type:'text/plain'}); const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `tipper_${todayStr}.txt`; a.click(); URL.revokeObjectURL(url);
     }
@@ -423,29 +435,20 @@
         let qty = parseInt(document.getElementById('usedQty').value, 10); if (isNaN(qty)||qty<1) qty=1;
         if (part.stock < qty) { alert(`only ${part.stock} left`); return; }
         
-        // get tipper from dropdown
         const vehicleSelect = document.getElementById('vehicleSelect');
         const vehicle = vehicleSelect.options[vehicleSelect.selectedIndex].value;
-        
         const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
         
-        // price calculation: if part is engine oil (id p2) we have per litre cost = 36000/60 = 600 per litre
-        let effectiveUnitPrice = part.lastPrice; // default total price for whole quantity? no, lastPrice stored as total cost for that item (like 36000 for 60 litres)
-        // for correct usage value we need per-unit price
-        let perUnitPrice = 0;
+        let perUnitPrice = part.lastPrice;
         if (part.id === 'p2' && part.unit === 'litre') {
             perUnitPrice = 36000 / 60; // 600 per litre
-        } else {
-            // for other parts, lastPrice is per piece? we assume it's per unit (like fuel filter 2450 per piece). Consistent with part.
-            perUnitPrice = part.lastPrice; 
-        }
+        } // else lastPrice is per unit
         
         part.stock -= qty;
-        // store priceAtUse as perUnitPrice, then usage value = perUnitPrice * qty
         usageHistory.push({ 
             partId:part.id, partName:part.name, vehicle, date, quantity:qty, 
             stockAfter:part.stock, unit:part.unit, 
-            priceAtUse: perUnitPrice   // per-unit price
+            priceAtUse: perUnitPrice
         });
         saveToStorage(); renderPartMaster(); renderDropdown(); renderHistory(); updateStats(); updateSelectedHint(); generateReport();
     }
