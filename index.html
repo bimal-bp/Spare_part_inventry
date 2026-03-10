@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tipper parts · stock & usage · 12 tippers</title>
+    <title>Tipper parts · stock & usage · 12 tippers (₹ INR)</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
         body { background: #f0f4f8; margin: 0; padding: 24px; display: flex; justify-content: center; }
@@ -60,7 +60,6 @@
         .btn-outline { background: white; border-color: #2c3e50; }
         .btn-outline:hover { background: #edf2f9; }
         .btn-download { background: #1e3a5f; color: white; border: none; }
-        /* purchase summary button - normal style */
         .btn-purchase-summary {
             background: #0b3b2f; color: white; border: none; padding: 12px 32px;
             border-radius: 60px; font-weight: 600; font-size: 1rem; cursor: pointer;
@@ -90,7 +89,6 @@
         }
         .report-note h3 { margin: 0 0 10px 0; color: #2c3e50; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .vendor-price { background: #e8f0fa; border-radius: 30px; padding: 2px 16px; font-size: 0.85rem; }
-        /* add new part section */
         .add-part-panel {
             background: #e9f0f6; border-radius: 30px; padding: 20px; margin-top: 28px;
             border: 1px solid #cbdae8; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
@@ -108,59 +106,62 @@
             padding: 6px 0; border-bottom: 1px dashed #aac2d9;
         }
         .purchase-summary-lines div:last-child { border-bottom: none; }
+        .tipper-selector {
+            display: flex; gap: 8px; align-items: center; background: #ffffffd0;
+            border-radius: 60px; padding: 4px 4px 4px 18px; border: 1px solid #b9c8da;
+        }
+        .tipper-selector select {
+            border: none; background: transparent; font-weight: 600; padding: 8px 16px 8px 8px;
+        }
     </style>
 </head>
 <body>
 <div class="app">
     <h1>
-        🚛 TIPPER PARTS STOCK & USAGE
-         
+        🚛 TIPPER PARTS STOCK & USAGE (₹ INR)
+        <span class="fleet-badge">12 tippers</span>
     </h1>
 
-    <!-- stats row + purchase summary button and directly 3 lines -->
+    <!-- stats row + purchase summary lines -->
     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div class="stats-row" style="flex: 1; margin-bottom:0;">
             <div class="stat-card"><div class="stat-label">total parts</div><div class="stat-number" id="totalParts">0</div></div>
             <div class="stat-card"><div class="stat-label">low stock items</div><div class="stat-number" id="lowStockCount">0</div><div class="stat-desc">need reorder</div></div>
             <div class="stat-card"><div class="stat-label">used this month</div><div class="stat-number" id="monthlyUsage">0</div></div>
         </div>
-        <!-- normal button + three lines directly shown -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        </div>
     </div>
-    <!-- three last purchase lines always visible (vendor names removed) -->
+    <!-- three last purchase lines always visible (vendor removed) -->
     <div class="purchase-summary-lines" id="purchaseLinesContainer">
-        <div>🔹 21‑03‑2026 — total 34 parts — Excv Parts - Volvo  -  $38484</div>
-        <div>🔹 18‑03‑2026 — total 22 parts — Tipper Adblue - Ashok Leyand  $21500</div>
-        <div>🔹 15‑03‑2026 — total 41 parts — $57620</div>
+        <div>🔹 21‑03‑2026 — total 34 parts —  ₹38484</div>
+        <div>🔹 18‑03‑2026 — total 22 parts —  ₹21500</div>
+        <div>🔹 15‑03‑2026 — total 41 parts —  ₹57620</div>
     </div>
 
-    <!-- MAIN ROW: left = part table (Part code column removed, vendor names entirely removed) , right = usage -->
+    <!-- MAIN ROW -->
     <div class="row-split">
-        <!-- LEFT CARD: parts without any vendor names -->
+        <!-- LEFT CARD: parts table (no vendor) -->
         <div class="card">
             <h2>📋 SPARE PARTS · stock & purchase</h2>
-            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong> (vendor info removed)</p>
+            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong></p>
             <table>
                 <thead>
-                    <tr><th>Name</th><th>Stock</th><th>Last price</th><th>Purch date</th></tr>
+                    <tr><th>Name</th><th>Stock</th><th>Last price (₹)</th><th>Purch date</th></tr>
                 </thead>
                 <tbody id="partMasterBody"></tbody>
             </table>
-            <!-- new "add spare part" option (vendor field is hidden, but we keep it out of sight: vendor no longer visible) -->
+            <!-- add new part panel (vendor hidden) -->
             <div class="add-part-panel">
                 <input type="text" id="newPartCode" placeholder="Code e.g. TIP-NEW-001" value="TIP-NEW-">
                 <input type="text" id="newPartName" placeholder="Part name">
                 <input type="number" id="newPartStock" placeholder="Stock" min="0" value="5">
-                <!-- vendor input removed, but we keep a hidden field to maintain data structure, but not shown? we set fixed value -->
                 <input type="hidden" id="newPartVendor" value="internal">
-                <input type="number" id="newPartPrice" placeholder="Price" step="0.01" value="0">
+                <input type="number" id="newPartPrice" placeholder="Price (₹)" step="0.01" value="0">
                 <input type="date" id="newPartDate" value="2026-03-21">
                 <button class="btn" id="addPartBtn">➕ ADD PART</button>
             </div>
         </div>
 
-        <!-- RIGHT CARD: usage entry + history (vendor names not displayed) -->
+        <!-- RIGHT CARD: usage entry + history + 12 tipper dropdown -->
         <div class="card">
             <h2>🔧 RECORD PART USAGE</h2>
             <div class="use-form">
@@ -170,7 +171,24 @@
                 </div>
                 <div class="inline-group">
                     <input type="date" id="usageDate" style="flex:2;" value="">
-                    <input type="text" id="vehicleUsed" placeholder="Tipper #" style="flex:2;" value="Tipper 03">
+                    <!-- TIPPER SELECTOR with 12 specific tippers -->
+                    <div class="tipper-selector" style="flex:3;">
+                        <span style="color:#1e3a5f;">🚛</span>
+                        <select id="vehicleSelect">
+                            <option value="Tipper 95">Tipper 95</option>
+                            <option value="Tipper 97">Tipper 97</option>
+                            <option value="Tipper 80">Tipper 80</option>
+                            <option value="Tipper 81" selected>Tipper 81</option>
+                            <option value="Tipper 51">Tipper 51</option>
+                            <option value="Tipper 52">Tipper 52</option>
+                            <option value="Tipper 26">Tipper 26</option>
+                            <option value="Tipper 27">Tipper 27</option>
+                            <option value="Tipper 28">Tipper 28</option>
+                            <option value="Tipper 57">Tipper 57</option>
+                            <option value="Tipper 58">Tipper 58</option>
+                            <option value="Tipper 99">Tipper 99</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="qty-group" style="margin-top:10px;">
                     <span style="font-weight:500;">🔢 Quantity used:</span>
@@ -180,18 +198,17 @@
                     <button class="btn btn-primary" id="recordUseBtn">✅ USE selected part</button>
                     <span id="selectedPartHint" style="align-self:center; background:#ffe6d5; border-radius:40px; padding:6px 18px;">stock: --</span>
                 </div>
-                <p style="margin:16px 0 6px; font-size:0.9rem; color:#2c3e50;">⚡ stock decreases, entry saved.</p>
+                <p style="margin:16px 0 6px; font-size:0.9rem; color:#2c3e50;">⚡ stock decreases, usage value (₹) calculated.</p>
             </div>
 
             <!-- usage history -->
             <h2 style="margin-top:24px;">📜 USAGE HISTORY</h2>
             <div id="historyContainer" style="max-height:300px; overflow-y:auto; padding-right:6px;"></div>
-            <!-- only one clear button left (history) - it's fine -->
             <button class="clear-btn" id="clearHistoryBtn">clear history (local)</button>
         </div>
     </div>
 
-    <!-- REPORT SECTION: last 7 days + download -->
+    <!-- REPORT SECTION: last 7 days + download, includes tipper-wise summary -->
     <div class="report-note" id="reportSection">
         <h3>
             📄 FLEET USAGE REPORT (last 7 days)
@@ -199,65 +216,72 @@
             <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
         </h3>
         <div id="reportContent"><span style="color:#4b6584;">Loading report based on usage entries...</span></div>
+        <!-- new section: tipper wise sum (last 7 days) -->
+        <div id="tipperWiseSummary" style="margin-top:16px; background: #e7f0fa; border-radius: 40px; padding: 14px 22px;">
+            ⏳ Tipper wise consumption (last 7 days) will appear here.
+        </div>
     </div>
 
     <div class="footer-tip">
-        ⚙️ <strong>updates:</strong>
+        ⚙️ <strong>updates:</strong> engine oil ₹36000/60L → ₹600 per litre. Usage shows cost in ₹.
     </div>
 </div>
 
 <script>
 (function() {
+    // Parts data: engine oil cost set to 36000 for 60 litres = ₹600 per litre.
     let parts = [
-        { id: 'p1', code: 'TIP-FIL-001', name: 'Fuel filter LF16001', stock: 8, unit: 'pcs', vendor: 'FilterCorp', lastPrice: 24.50, lastPurchaseDate: '2025-02-10' },
-        { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre', vendor: 'LubriFast', lastPrice: 4.20, lastPurchaseDate: '2025-03-01' },
-        { id: 'p3', code: 'TIP-BEL-003', name: 'Fan belt 8PK', stock: 2, unit: 'pcs', vendor: 'BeltMaster', lastPrice: 18.90, lastPurchaseDate: '2025-01-18' },
-        { id: 'p4', code: 'TIP-AIR-022', name: 'Air filter primary', stock: 3, unit: 'pcs', vendor: 'AirFlow', lastPrice: 37.00, lastPurchaseDate: '2025-02-22' },
-        { id: 'p5', code: 'TIP-BRK-101', name: 'Brake chamber rear', stock: 2, unit: 'pcs', vendor: 'BrakeTech', lastPrice: 89.50, lastPurchaseDate: '2025-03-10' },
-        { id: 'p6', code: 'TIP-CLP-001', name: 'Clutch plate 330mm', stock: 1, unit: 'pcs', vendor: 'TransParts', lastPrice: 145.00, lastPurchaseDate: '2025-02-05' },
-        { id: 'p7', code: 'TIP-HYD-880', name: 'Hydraulic oil 20L drum', stock: 2, unit: 'drum', vendor: 'Hydraulics Inc', lastPrice: 210.00, lastPurchaseDate: '2025-03-14' },
-        { id: 'p8', code: 'TIP-ALT-07', name: 'Alternator 24V', stock: 2, unit: 'pcs', vendor: 'ElectroDrive', lastPrice: 310.00, lastPurchaseDate: '2024-12-01' },
-        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set', vendor: 'SuspensionX', lastPrice: 42.30, lastPurchaseDate: '2025-02-28' },
-        { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs', vendor: 'LightLux', lastPrice: 12.75, lastPurchaseDate: '2025-03-20' },
-        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre tube 10.00R20', stock: 4, unit: 'pcs', vendor: 'RubberCo', lastPrice: 55.00, lastPurchaseDate: '2025-01-12' },
-        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: 'GreaseMonkey', lastPrice: 38.00, lastPurchaseDate: '2025-03-05' }
+        { id: 'p1', code: 'TIP-FIL-001', name: 'Fuel filter LF16001', stock: 8, unit: 'pcs', vendor: '', lastPrice: 2450, lastPurchaseDate: '2025-02-10' },
+        { id: 'p2', code: 'TIP-OIL-015', name: 'Engine oil 15W40', stock: 60, unit: 'litre', vendor: '', lastPrice: 36000, lastPurchaseDate: '2025-03-01' },  // 60L for ₹36000
+        { id: 'p3', code: 'TIP-BEL-003', name: 'Fan belt 8PK', stock: 2, unit: 'pcs', vendor: '', lastPrice: 1890, lastPurchaseDate: '2025-01-18' },
+        { id: 'p4', code: 'TIP-AIR-022', name: 'Air filter primary', stock: 3, unit: 'pcs', vendor: '', lastPrice: 3700, lastPurchaseDate: '2025-02-22' },
+        { id: 'p5', code: 'TIP-BRK-101', name: 'Brake chamber rear', stock: 2, unit: 'pcs', vendor: '', lastPrice: 8950, lastPurchaseDate: '2025-03-10' },
+        { id: 'p6', code: 'TIP-CLP-001', name: 'Clutch plate 330mm', stock: 1, unit: 'pcs', vendor: '', lastPrice: 14500, lastPurchaseDate: '2025-02-05' },
+        { id: 'p7', code: 'TIP-HYD-880', name: 'Hydraulic oil 20L drum', stock: 2, unit: 'drum', vendor: '', lastPrice: 21000, lastPurchaseDate: '2025-03-14' },
+        { id: 'p8', code: 'TIP-ALT-07', name: 'Alternator 24V', stock: 2, unit: 'pcs', vendor: '', lastPrice: 31000, lastPurchaseDate: '2024-12-01' },
+        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set', vendor: '', lastPrice: 4230, lastPurchaseDate: '2025-02-28' },
+        { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs', vendor: '', lastPrice: 1275, lastPurchaseDate: '2025-03-20' },
+        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre tube 10.00R20', stock: 4, unit: 'pcs', vendor: '', lastPrice: 5500, lastPurchaseDate: '2025-01-12' },
+        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: '', lastPrice: 3800, lastPurchaseDate: '2025-03-05' }
     ];
     let usageHistory = [];
 
     function loadFromStorage() {
-        const savedParts = localStorage.getItem('tipper_parts_v4');
-        const savedHistory = localStorage.getItem('tipper_history_v4');
+        const savedParts = localStorage.getItem('tipper_parts_inr_v2');
+        const savedHistory = localStorage.getItem('tipper_history_inr_v2');
         if (savedParts) { try { parts = JSON.parse(savedParts); } catch(e){} }
         if (savedHistory) { try { usageHistory = JSON.parse(savedHistory); } catch(e){} }
     }
     function saveToStorage() {
-        localStorage.setItem('tipper_parts_v4', JSON.stringify(parts));
-        localStorage.setItem('tipper_history_v4', JSON.stringify(usageHistory));
+        localStorage.setItem('tipper_parts_inr_v2', JSON.stringify(parts));
+        localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
     }
 
-    // render part master WITHOUT any vendor name (even small meta removed)
     function renderPartMaster() {
         const tbody = document.getElementById('partMasterBody');
         let html = '';
         parts.forEach(p => {
             const lowClass = p.stock <= 2 ? 'low-stock' : '';
+            // show price in rupees, for engine oil we show per-litre equiv in small if needed? keep as lastprice (total)
+            let displayPrice = p.lastPrice;
+            if (p.id === 'p2' && p.unit === 'litre') {
+                // we can optionally indicate ₹600/L but keep table simple
+            }
             html += `<tr>
                 <td><strong>${p.name}</strong></td>
                 <td class="${lowClass}" style="font-weight:600;">${p.stock} ${p.unit}</td>
-                <td>$${p.lastPrice?.toFixed(2) || '0.00'}</td>
+                <td>₹${p.lastPrice?.toFixed(2) || '0.00'}</td>
                 <td>${p.lastPurchaseDate || '—'}</td>
             </tr>`;
         });
         tbody.innerHTML = html;
     }
 
-    // render dropdown without TIP- codes, only part name and stock
     function renderDropdown() {
         const select = document.getElementById('partSelectDropdown');
         let options = '';
         parts.forEach(p => {
-            // remove the TIP-xxx prefix: show only part name and stock
-            options += `<option value="${p.id}" data-stock="${p.stock}" data-unit="${p.unit}">${p.name} (${p.stock} ${p.unit})</option>`;
+            options += `<option value="${p.id}" data-stock="${p.stock}" data-unit="${p.unit}" data-price="${p.lastPrice}">${p.name} (${p.stock} ${p.unit})</option>`;
         });
         select.innerHTML = options;
         if (parts.length) { select.selectedIndex = 0; updateSelectedHint(); }
@@ -280,15 +304,16 @@
             container.innerHTML = '<div style="background:#f2f6fa; padding:20px; border-radius:28px; color:#556b82;">📭 No usage recorded yet.</div>';
             return;
         }
-        const reversed = [...usageHistory].reverse().slice(0, 15);
+        const reversed = [...usageHistory].reverse().slice(0, 20);
         let html = '';
         reversed.forEach(e => {
+            const usageValue = (e.priceAtUse && e.quantity) ? (e.priceAtUse * e.quantity) : 0;
             html += `<div class="history-item">
                 <div style="display:flex; justify-content:space-between;"><span><strong>${e.partName}</strong></span><span class="history-date">📅 ${e.date}</span></div>
                 <div style="margin-top:8px; display:flex; gap:20px; flex-wrap:wrap;">
-                    <span>🚛 ${e.vehicle}</span><span>🔢 qty: <strong>${e.quantity||1}</strong></span><span>📉 after: <strong>${e.stockAfter} ${e.unit}</strong></span>
+                    <span>🚛 ${e.vehicle}</span><span>🔢 qty: <strong>${e.quantity}</strong></span><span>📉 after: <strong>${e.stockAfter} ${e.unit}</strong></span>
                 </div>
-                <div style="font-size:0.8rem;">💵 price at use: $${e.priceAtUse?.toFixed(2)||'0.00'}</div>
+                <div style="font-size:0.9rem; background:#f1e8d9; padding:2px 12px; border-radius:30px; display:inline-block;">💰 usage value: ₹${usageValue.toFixed(2)}</div>
             </div>`;
         });
         container.innerHTML = html;
@@ -303,30 +328,69 @@
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
 
+    // generate report with date-wise grouping and tipper-wise sum for last 7 days
     function generateReport() {
         const container = document.getElementById('reportContent');
-        if (!usageHistory.length) { container.innerHTML = '<span>No entries yet.</span>'; return; }
-        const today = new Date(); const sevenAgo = new Date(today); sevenAgo.setDate(today.getDate()-7);
+        const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
+        if (!usageHistory.length) { 
+            container.innerHTML = '<span>No entries yet.</span>';
+            tipperSummaryDiv.innerHTML = '⏳ No data for tipper wise.';
+            return;
+        }
+        const today = new Date(); 
+        const sevenAgo = new Date(today); sevenAgo.setDate(today.getDate()-7);
         const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(b.date)-new Date(a.date));
-        if (!recent.length) { container.innerHTML = '<span>No usage last 7 days.</span>'; return; }
+        
+        if (!recent.length) { 
+            container.innerHTML = '<span>No usage last 7 days.</span>';
+            tipperSummaryDiv.innerHTML = '⏳ No tipper usage in last 7 days.';
+            return;
+        }
+
+        // Group by date for display
         let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
+        const dateMap = new Map();
         recent.forEach(e => {
-            let low = e.stockAfter <=2 ? '🔴 low' : '';
-            html += `<div style="background:#ffffffd6; border-radius:50px; padding:8px 18px; display:flex; flex-wrap:wrap; gap:15px; align-items:center; border:1px solid #e6dac8;">
-                <span><strong>${e.partName}</strong></span><span>🚛 ${e.vehicle}</span><span>📆 ${e.date}</span><span>after: ${e.stockAfter} ${e.unit} ${low}</span>
-            </div>`;
+            if (!dateMap.has(e.date)) dateMap.set(e.date, []);
+            dateMap.get(e.date).push(e);
         });
+        const sortedDates = Array.from(dateMap.keys()).sort((a,b)=>new Date(b)-new Date(a));
+        for (let d of sortedDates) {
+            const entries = dateMap.get(d);
+            html += `<div style="background:#ffffffd6; border-radius:50px; padding:10px 18px; margin-bottom:6px; border:1px solid #e6dac8;">
+                <span style="font-weight:700;">📆 ${d}</span> (${entries.length} usage)`;
+            entries.forEach(e => {
+                let val = (e.priceAtUse * e.quantity).toFixed(2);
+                html += `<div style="margin-left:16px; display:flex; gap:12px; flex-wrap:wrap;"><span>🚛 ${e.vehicle}</span><span>${e.partName} qty:${e.quantity}</span><span> ₹${val}</span></div>`;
+            });
+            html += `</div>`;
+        }
         html += `</div><p>total recent: ${recent.length}</p>`;
         container.innerHTML = html;
+
+        // tipper wise sum for last 7 days
+        const tipperSum = {};
+        recent.forEach(e => {
+            const v = e.vehicle;
+            if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0 };
+            tipperSum[v].count += e.quantity;
+            tipperSum[v].totalCost += (e.priceAtUse * e.quantity);
+        });
+        let tipHtml = '<div style="display:flex; flex-direction:column; gap:6px;">';
+        for (let [t, val] of Object.entries(tipperSum)) {
+            tipHtml += `<div><span style="display:inline-block; width:100px;">${t}</span> 🔧 parts used: ${val.count} | ₹${val.totalCost.toFixed(2)}</div>`;
+        }
+        tipHtml += '</div>';
+        tipperSummaryDiv.innerHTML = tipHtml;
     }
 
     function downloadReport() {
         const todayStr = new Date().toISOString().slice(0,10);
-        let content = `TIPPER REPORT (last 7d) ${todayStr}\n================\n`;
+        let content = `TIPPER REPORT (last 7d) ${todayStr} (₹ INR)\n================\n`;
         const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate()-7);
         const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(b.date)-new Date(a.date));
         if (!recent.length) content += 'No usage.\n';
-        else recent.forEach(e => content += `${e.date} | ${e.partName} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter}\n`);
+        else recent.forEach(e => content += `${e.date} | ${e.partName} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter} | usage value: ₹${(e.priceAtUse*e.quantity).toFixed(2)}\n`);
         const blob = new Blob([content], {type:'text/plain'}); const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `tipper_${todayStr}.txt`; a.click(); URL.revokeObjectURL(url);
     }
@@ -337,10 +401,31 @@
         const part = parts.find(p => p.id === selectedId); if (!part) return;
         let qty = parseInt(document.getElementById('usedQty').value, 10); if (isNaN(qty)||qty<1) qty=1;
         if (part.stock < qty) { alert(`only ${part.stock} left`); return; }
-        const vehicle = document.getElementById('vehicleUsed').value.trim()||'unknown';
+        
+        // get tipper from dropdown
+        const vehicleSelect = document.getElementById('vehicleSelect');
+        const vehicle = vehicleSelect.options[vehicleSelect.selectedIndex].value;
+        
         const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
+        
+        // price calculation: if part is engine oil (id p2) we have per litre cost = 36000/60 = 600 per litre
+        let effectiveUnitPrice = part.lastPrice; // default total price for whole quantity? no, lastPrice stored as total cost for that item (like 36000 for 60 litres)
+        // for correct usage value we need per-unit price
+        let perUnitPrice = 0;
+        if (part.id === 'p2' && part.unit === 'litre') {
+            perUnitPrice = 36000 / 60; // 600 per litre
+        } else {
+            // for other parts, lastPrice is per piece? we assume it's per unit (like fuel filter 2450 per piece). Consistent with part.
+            perUnitPrice = part.lastPrice; 
+        }
+        
         part.stock -= qty;
-        usageHistory.push({ partId:part.id, partName:part.name, vehicle, date, quantity:qty, stockAfter:part.stock, unit:part.unit, priceAtUse:part.lastPrice||0 });
+        // store priceAtUse as perUnitPrice, then usage value = perUnitPrice * qty
+        usageHistory.push({ 
+            partId:part.id, partName:part.name, vehicle, date, quantity:qty, 
+            stockAfter:part.stock, unit:part.unit, 
+            priceAtUse: perUnitPrice   // per-unit price
+        });
         saveToStorage(); renderPartMaster(); renderDropdown(); renderHistory(); updateStats(); updateSelectedHint(); generateReport();
     }
 
@@ -348,7 +433,6 @@
 
     function setDefaultDate() { document.getElementById('usageDate').value = new Date().toISOString().slice(0,10); }
 
-    // ADD NEW PART function (vendor is hidden, no display)
     function addNewPart() {
         const code = document.getElementById('newPartCode').value.trim(); if(!code){alert('enter code');return;}
         const name = document.getElementById('newPartName').value.trim(); if(!name){alert('enter name');return;}
@@ -357,23 +441,16 @@
         const date = document.getElementById('newPartDate').value;
         if(!date) { alert('enter purchase date'); return; }
         const newId = 'p' + Date.now() + Math.floor(Math.random()*1000);
-        // vendor fixed as empty string – never shown
         const newPart = {
             id: newId, code, name, stock, unit: 'pcs', vendor: '', lastPrice: price, lastPurchaseDate: date
         };
         parts.push(newPart);
         saveToStorage(); renderPartMaster(); renderDropdown(); updateStats();
-        // clear some fields
         document.getElementById('newPartCode').value = 'TIP-NEW-';
         document.getElementById('newPartName').value = '';
         document.getElementById('newPartStock').value = '5';
         document.getElementById('newPartPrice').value = '0';
         document.getElementById('newPartDate').value = '2026-03-21';
-    }
-
-    // last purchases button just highlights lines (they're always visible)
-    function showLastPurchases() {
-        alert('✅ Three latest purchase lines are shown above (vendor names removed)');
     }
 
     window.onload = function() {
@@ -383,7 +460,6 @@
         document.getElementById('recordUseBtn').addEventListener('click', recordUsage);
         document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
         document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
-        document.getElementById('lastPurchasesSummaryBtn').addEventListener('click', showLastPurchases);
         document.getElementById('addPartBtn').addEventListener('click', addNewPart);
     };
 })();
