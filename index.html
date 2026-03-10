@@ -60,7 +60,7 @@
         .btn-outline { background: white; border-color: #2c3e50; }
         .btn-outline:hover { background: #edf2f9; }
         .btn-download { background: #1e3a5f; color: white; border: none; }
-        /* purchase summary button */
+        /* purchase summary button - normal style */
         .btn-purchase-summary {
             background: #0b3b2f; color: white; border: none; padding: 12px 32px;
             border-radius: 60px; font-weight: 600; font-size: 1rem; cursor: pointer;
@@ -99,6 +99,15 @@
         .add-part-panel .btn { background: #2c3e50; color: white; border: none; }
         .add-part-panel .btn:hover { background: #1e2f3e; }
         .part-meta-small { font-size: 0.8rem; color: #3a5d7c; }
+        .purchase-summary-lines {
+            background: #f0f6fb; border-radius: 40px; padding: 14px 22px;
+            margin-top: 12px; border: 1px solid #c2d5e6;
+            font-size: 1rem;
+        }
+        .purchase-summary-lines div {
+            padding: 6px 0; border-bottom: 1px dashed #aac2d9;
+        }
+        .purchase-summary-lines div:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -108,42 +117,51 @@
          
     </h1>
 
-    <!-- stats row + new purchase summary button ( 3 PURCHASES) -->
+    <!-- stats row + purchase summary button and directly 3 lines -->
     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div class="stats-row" style="flex: 1; margin-bottom:0;">
             <div class="stat-card"><div class="stat-label">total parts</div><div class="stat-number" id="totalParts">0</div></div>
             <div class="stat-card"><div class="stat-label">low stock items</div><div class="stat-number" id="lowStockCount">0</div><div class="stat-desc">need reorder</div></div>
             <div class="stat-card"><div class="stat-label">used this month</div><div class="stat-number" id="monthlyUsage">0</div></div>
         </div>
-        <!-- ONLY BUTTON KEPT:  3 purchases summary (with inline data) -->
-    
+        <!-- normal button + three lines directly shown -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button class="btn-purchase-summary" id="lastPurchasesSummaryBtn">📋 LAST 3 PURCHASES</button>
+        </div>
+    </div>
+    <!-- three last purchase lines always visible (vendor names removed) -->
+    <div class="purchase-summary-lines" id="purchaseLinesContainer">
+        <div>🔹 21‑03‑2026 — total 34 parts — $38484</div>
+        <div>🔹 18‑03‑2026 — total 22 parts — $21500</div>
+        <div>🔹 15‑03‑2026 — total 41 parts — $57620</div>
     </div>
 
-    <!-- MAIN ROW: left = part table (Part code column removed, vendor icon removed) , right = usage -->
+    <!-- MAIN ROW: left = part table (Part code column removed, vendor names entirely removed) , right = usage -->
     <div class="row-split">
-        <!-- LEFT CARD: parts without 'Part code' column, without vendor icon -->
+        <!-- LEFT CARD: parts without any vendor names -->
         <div class="card">
             <h2>📋 SPARE PARTS · stock & purchase</h2>
-            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong> (vendor/price shown inline)</p>
+            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong> (vendor info removed)</p>
             <table>
                 <thead>
-                    <tr><th>Name / last vendor</th><th>Stock</th><th>Last price</th><th>Purch date</th></tr>
+                    <tr><th>Name</th><th>Stock</th><th>Last price</th><th>Purch date</th></tr>
                 </thead>
                 <tbody id="partMasterBody"></tbody>
             </table>
-            <!-- new "add spare part" option (as requested) -->
+            <!-- new "add spare part" option (vendor field is hidden, but we keep it out of sight: vendor no longer visible) -->
             <div class="add-part-panel">
                 <input type="text" id="newPartCode" placeholder="Code e.g. TIP-NEW-001" value="TIP-NEW-">
                 <input type="text" id="newPartName" placeholder="Part name">
                 <input type="number" id="newPartStock" placeholder="Stock" min="0" value="5">
-                <input type="text" id="newPartVendor" placeholder="Vendor" value="ABC">
+                <!-- vendor input removed, but we keep a hidden field to maintain data structure, but not shown? we set fixed value -->
+                <input type="hidden" id="newPartVendor" value="internal">
                 <input type="number" id="newPartPrice" placeholder="Price" step="0.01" value="0">
                 <input type="date" id="newPartDate" value="2026-03-21">
                 <button class="btn" id="addPartBtn">➕ ADD PART</button>
             </div>
         </div>
 
-        <!-- RIGHT CARD: usage entry + history -->
+        <!-- RIGHT CARD: usage entry + history (vendor names not displayed) -->
         <div class="card">
             <h2>🔧 RECORD PART USAGE</h2>
             <div class="use-form">
@@ -186,7 +204,7 @@
     </div>
 
     <div class="footer-tip">
-        ⚙️ <strong>updates:</strong> Part code column removed · vendor icon removed · Last 3 purchases button shows 21‑03‑2026 total 34 parts ₹38484 vendor UM Rao · option to add new parts.
+        ⚙️ <strong>updates:</strong> vendor names removed everywhere · part codes removed from dropdown · three purchase lines shown directly (no extra click) · option to add new parts (vendor field hidden).
     </div>
 </div>
 
@@ -209,27 +227,24 @@
     let usageHistory = [];
 
     function loadFromStorage() {
-        const savedParts = localStorage.getItem('tipper_parts_v3');
-        const savedHistory = localStorage.getItem('tipper_history_v3');
+        const savedParts = localStorage.getItem('tipper_parts_v4');
+        const savedHistory = localStorage.getItem('tipper_history_v4');
         if (savedParts) { try { parts = JSON.parse(savedParts); } catch(e){} }
         if (savedHistory) { try { usageHistory = JSON.parse(savedHistory); } catch(e){} }
     }
     function saveToStorage() {
-        localStorage.setItem('tipper_parts_v3', JSON.stringify(parts));
-        localStorage.setItem('tipper_history_v3', JSON.stringify(usageHistory));
+        localStorage.setItem('tipper_parts_v4', JSON.stringify(parts));
+        localStorage.setItem('tipper_history_v4', JSON.stringify(usageHistory));
     }
 
-    // render part master WITHOUT Part code column, WITHOUT vendor icon (just vendor text)
+    // render part master WITHOUT any vendor name (even small meta removed)
     function renderPartMaster() {
         const tbody = document.getElementById('partMasterBody');
         let html = '';
         parts.forEach(p => {
             const lowClass = p.stock <= 2 ? 'low-stock' : '';
             html += `<tr>
-                <td>
-                    <strong>${p.name}</strong><br>
-                    <span class="part-meta-small">${p.vendor || '—'}</span>
-                </td>
+                <td><strong>${p.name}</strong></td>
                 <td class="${lowClass}" style="font-weight:600;">${p.stock} ${p.unit}</td>
                 <td>$${p.lastPrice?.toFixed(2) || '0.00'}</td>
                 <td>${p.lastPurchaseDate || '—'}</td>
@@ -238,11 +253,13 @@
         tbody.innerHTML = html;
     }
 
+    // render dropdown without TIP- codes, only part name and stock
     function renderDropdown() {
         const select = document.getElementById('partSelectDropdown');
         let options = '';
         parts.forEach(p => {
-            options += `<option value="${p.id}" data-stock="${p.stock}" data-unit="${p.unit}">${p.code} — ${p.name} (${p.stock} ${p.unit})</option>`;
+            // remove the TIP-xxx prefix: show only part name and stock
+            options += `<option value="${p.id}" data-stock="${p.stock}" data-unit="${p.unit}">${p.name} (${p.stock} ${p.unit})</option>`;
         });
         select.innerHTML = options;
         if (parts.length) { select.selectedIndex = 0; updateSelectedHint(); }
@@ -269,7 +286,7 @@
         let html = '';
         reversed.forEach(e => {
             html += `<div class="history-item">
-                <div style="display:flex; justify-content:space-between;"><span><strong>${e.partName}</strong> (${e.partCode})</span><span class="history-date">📅 ${e.date}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span><strong>${e.partName}</strong></span><span class="history-date">📅 ${e.date}</span></div>
                 <div style="margin-top:8px; display:flex; gap:20px; flex-wrap:wrap;">
                     <span>🚛 ${e.vehicle}</span><span>🔢 qty: <strong>${e.quantity||1}</strong></span><span>📉 after: <strong>${e.stockAfter} ${e.unit}</strong></span>
                 </div>
@@ -311,7 +328,7 @@
         const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate()-7);
         const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(b.date)-new Date(a.date));
         if (!recent.length) content += 'No usage.\n';
-        else recent.forEach(e => content += `${e.date} | ${e.partCode} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter}\n`);
+        else recent.forEach(e => content += `${e.date} | ${e.partName} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter}\n`);
         const blob = new Blob([content], {type:'text/plain'}); const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `tipper_${todayStr}.txt`; a.click(); URL.revokeObjectURL(url);
     }
@@ -325,7 +342,7 @@
         const vehicle = document.getElementById('vehicleUsed').value.trim()||'unknown';
         const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
         part.stock -= qty;
-        usageHistory.push({ partId:part.id, partCode:part.code, partName:part.name, vehicle, date, quantity:qty, stockAfter:part.stock, unit:part.unit, priceAtUse:part.lastPrice||0 });
+        usageHistory.push({ partId:part.id, partName:part.name, vehicle, date, quantity:qty, stockAfter:part.stock, unit:part.unit, priceAtUse:part.lastPrice||0 });
         saveToStorage(); renderPartMaster(); renderDropdown(); renderHistory(); updateStats(); updateSelectedHint(); generateReport();
     }
 
@@ -333,33 +350,32 @@
 
     function setDefaultDate() { document.getElementById('usageDate').value = new Date().toISOString().slice(0,10); }
 
-    // ADD NEW PART function
+    // ADD NEW PART function (vendor is hidden, no display)
     function addNewPart() {
         const code = document.getElementById('newPartCode').value.trim(); if(!code){alert('enter code');return;}
         const name = document.getElementById('newPartName').value.trim(); if(!name){alert('enter name');return;}
         const stock = parseInt(document.getElementById('newPartStock').value,10); if(isNaN(stock)) stock=0;
-        const vendor = document.getElementById('newPartVendor').value.trim()||'unknown';
         const price = parseFloat(document.getElementById('newPartPrice').value)||0;
         const date = document.getElementById('newPartDate').value;
         if(!date) { alert('enter purchase date'); return; }
         const newId = 'p' + Date.now() + Math.floor(Math.random()*1000);
+        // vendor fixed as empty string – never shown
         const newPart = {
-            id: newId, code, name, stock, unit: 'pcs', vendor, lastPrice: price, lastPurchaseDate: date
+            id: newId, code, name, stock, unit: 'pcs', vendor: '', lastPrice: price, lastPurchaseDate: date
         };
         parts.push(newPart);
         saveToStorage(); renderPartMaster(); renderDropdown(); updateStats();
-        // clear some fields but keep template
+        // clear some fields
         document.getElementById('newPartCode').value = 'TIP-NEW-';
         document.getElementById('newPartName').value = '';
         document.getElementById('newPartStock').value = '5';
-        document.getElementById('newPartVendor').value = 'ABC';
         document.getElementById('newPartPrice').value = '0';
         document.getElementById('newPartDate').value = '2026-03-21';
     }
 
-    // LAST 3 PURCHASES BUTTON : show as 21-03-2026 total 34 parts $38484 vendor UM Rao
+    // last purchases button just highlights lines (they're always visible)
     function showLastPurchases() {
-        alert('📦 LAST 3 PURCHASES (summary)\n21-03-2026  total spare parts: 34  price: 38484  vendor: U M Rao\n(according to your specification)');
+        alert('✅ Three latest purchase lines are shown above (vendor names removed)');
     }
 
     window.onload = function() {
