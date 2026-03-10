@@ -115,16 +115,86 @@
         .tipper-selector select {
             border: none; background: transparent; font-weight: 600; padding: 8px 16px 8px 8px; color: #1e3a5f;
         }
-        /* report formatting exactly as requested */
+        /* ========== ENHANCED REPORT STYLES – clear date grouping ========= */
         .report-lines {
-            background: #f6faff; border-radius: 28px; padding: 14px 22px;
+            background: #f6faff; border-radius: 28px; padding: 18px 22px;
             white-space: pre-wrap; font-family: 'Courier New', monospace;
             font-size: 0.95rem; border: 1px solid #b7cee8;
+            line-height: 1.7;
+        }
+        /* date block headings – bold, coloured, separated */
+        .report-lines .report-date-head {
+            display: block;
+            background: #1e3a5f;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 40px;
+            margin: 20px 0 12px 0;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            font-family: 'Segoe UI', sans-serif;
+            border: 1px solid #0f2b44;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+        }
+        .report-lines .report-date-head:first-of-type {
+            margin-top: 0;
+        }
+        /* each usage entry – indented, light background */
+        .report-lines .report-entry {
+            display: block;
+            background: #ffffffd9;
+            margin: 8px 0 8px 18px;
+            padding: 10px 18px;
+            border-radius: 30px;
+            border-left: 4px solid #1e5f7c;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 2px 5px #d9e2ef;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        /* vehicle line, part line and cost line get subtle separation */
+        .report-lines .report-entry .entry-line {
+            display: block;
+            margin: 2px 0;
+        }
+        .report-lines .report-entry .entry-line strong {
+            color: #1e3a5f;
+            background: #e3ecf5;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+        }
+        /* total recent line – subtle */
+        .report-lines .report-total {
+            display: inline-block;
+            background: #2a7f4b;
+            color: white;
+            border-radius: 60px;
+            padding: 6px 24px;
+            margin-top: 16px;
+            font-weight: 600;
+            border: 1px solid #1b5e37;
         }
         .tipper-sum-block {
-            margin-top: 16px; background: #e7f0fa; border-radius: 40px;
-            padding: 14px 22px; color: #1e3a5f;
-            white-space: pre-wrap; font-family: 'Courier New', monospace;
+            margin-top: 20px;
+            background: #e7f0fa;
+            border-radius: 40px;
+            padding: 16px 24px;
+            color: #1e3a5f;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            border: 2px solid #bed6f0;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        .tipper-sum-block span.tipper-title {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 8px;
+            color: #164b63;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
@@ -218,14 +288,14 @@
         </div>
     </div>
 
-    <!-- REPORT SECTION: last 7 days + download, matches exact format requested -->
+    <!-- REPORT SECTION: last 7 days + download, with enhanced date grouping styles -->
     <div class="report-note" id="reportSection">
         <h3>
             📄 FLEET USAGE REPORT (last 7 days)
             <span style="font-size:0.8rem; background: #1e5f7c; color:white; padding:4px 16px; border-radius:60px;">generated</span>
             <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
         </h3>
-        <!-- report content mimics the style: date groups, tipper lines with cost, total recent, then tipper wise summary at bottom corner -->
+        <!-- report content will be injected with structured spans for readability -->
         <div id="reportContent" class="report-lines"></div>
         <div id="tipperWiseSummary" class="tipper-sum-block"></div>
     </div>
@@ -343,19 +413,20 @@
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
 
-    // generate report with EXACT format: date groups, then tipper-wise summary bottom right
+    // generate report with EXACT format: date groups + structured spans for readability
     function generateReport() {
         const container = document.getElementById('reportContent');
         const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
         if (!usageHistory.length) { 
-            container.innerText = 'No entries yet.';
+            container.innerHTML = '<span style="padding:20px; display:block;">📭 No entries yet.</span>';
             tipperSummaryDiv.innerText = '⏳ No data for tipper wise.';
             return;
         }
         const today = new Date(); 
         const sevenAgo = new Date(today); sevenAgo.setDate(today.getDate()-7);
-        let recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date)); // ascending for grouping later (but we'll group)
-        // group by date string DD-MM-YYYY
+        let recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date));
+        
+        // group by formatted date DD-MM-YYYY
         const dateGroups = {};
         recent.forEach(e => {
             const dStr = formatDateDDMMYYYY(e.date);
@@ -369,19 +440,25 @@
             return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`); // descending
         });
 
-        let reportLines = '';
+        let htmlContent = '';
         for (let d of sortedDates) {
             const entries = dateGroups[d];
-            reportLines += `📆 ${d} (${entries.length} usage)\n`;
+            // date heading as styled block
+            htmlContent += `<span class="report-date-head">📆 ${d}  (${entries.length} usage)</span>`;
             entries.forEach(e => {
                 const usageVal = (e.priceAtUse * e.quantity).toFixed(2);
-                reportLines += `🚛 ${e.vehicle}\n${e.partName} qty:${e.quantity}\n₹${usageVal}\n`;
+                // each entry inside a card-like block with clear lines
+                htmlContent += `<span class="report-entry">`;
+                htmlContent += `<span class="entry-line"><strong>🚛 ${e.vehicle}</strong></span>`;
+                htmlContent += `<span class="entry-line">🔧 ${e.partName}  qty:${e.quantity}</span>`;
+                htmlContent += `<span class="entry-line">💰 ₹${usageVal}</span>`;
+                htmlContent += `</span>`;
             });
         }
-        reportLines += `total recent: ${recent.length}\n`;
-        container.innerText = reportLines;
+        htmlContent += `<span class="report-total">📊 total recent: ${recent.length}</span>`;
+        container.innerHTML = htmlContent;
 
-        // tipper wise summary (last 7 days) with format: "Tipper 97 🔧 parts used: 2 | ₹8460.00"
+        // tipper wise summary (last 7 days) with enhanced style
         const tipperSum = {};
         recent.forEach(e => {
             const v = e.vehicle;
@@ -389,12 +466,11 @@
             tipperSum[v].count += e.quantity;
             tipperSum[v].totalCost += (e.priceAtUse * e.quantity);
         });
-        let tipLines = '';
-        // sort tipper names for consistency
+        let tipLines = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY (last 7 days)</span>';
         Object.keys(tipperSum).sort().forEach(t => {
             tipLines += `${t} 🔧 parts used: ${tipperSum[t].count} | ₹${tipperSum[t].totalCost.toFixed(2)}\n`;
         });
-        tipperSummaryDiv.innerText = tipLines || 'No tipper usage in last 7 days.';
+        tipperSummaryDiv.innerText = tipLines;
     }
 
     function downloadReport() {
@@ -417,7 +493,6 @@
             });
         }
         content += `total recent: ${recent.length}\n\n`;
-        // tipper wise summary
         const tipperSum = {};
         recent.forEach(e => { const v = e.vehicle; if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0 }; tipperSum[v].count += e.quantity; tipperSum[v].totalCost += (e.priceAtUse * e.quantity); });
         Object.keys(tipperSum).sort().forEach(t => {
