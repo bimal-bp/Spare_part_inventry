@@ -140,7 +140,7 @@
         .report-lines .report-date-head:first-of-type {
             margin-top: 0;
         }
-        /* each usage entry – indented, light background */
+        /* each usage entry – single line, indented, light background */
         .report-lines .report-entry {
             display: block;
             background: #ffffffd9;
@@ -153,19 +153,18 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
-        /* vehicle line, part line and cost line get subtle separation */
-        .report-lines .report-entry .entry-line {
-            display: block;
-            margin: 2px 0;
+        /* date total – subtle green block */
+        .report-lines .report-date-total {
+            display: inline-block;
+            background: #2a7f4b;
+            color: white;
+            border-radius: 60px;
+            padding: 6px 24px;
+            margin: 12px 0 0 18px;
+            font-weight: 600;
+            border: 1px solid #1b5e37;
         }
-        .report-lines .report-entry .entry-line strong {
-            color: #1e3a5f;
-            background: #e3ecf5;
-            padding: 2px 12px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-        }
-        /* total recent line – subtle */
+        /* overall total recent line – subtle */
         .report-lines .report-total {
             display: inline-block;
             background: #2a7f4b;
@@ -196,6 +195,35 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        /* Enhanced tipper summary styles */
+        .tipper-sum-block .tipper-line {
+            display: block;
+            background: #f9fcff;
+            margin: 6px 0;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border-left: 4px solid #1e5f7c;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 1px 3px #d9e2ef;
+        }
+        .tipper-sum-block .tipper-total {
+            display: inline-block;
+            background: #1d5b3e;
+            color: white;
+            border-radius: 60px;
+            padding: 8px 24px;
+            margin-top: 12px;
+            font-weight: 700;
+            border: 1px solid #0f4e3e;
+            font-size: 1.1rem;
+        }
+        .tipper-sum-block .oil-unit {
+            color: #b13e00;
+            font-weight: 600;
+        }
+        .storage-warning {
+            background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 12px; border-radius: 20px; margin: 10px 0; font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -204,7 +232,7 @@
         🚛 TIPPER PARTS STOCK & USAGE (₹ INR)
         <span class="fleet-badge">12 tippers</span>
     </h1>
-
+    <div id="storageWarning" class="storage-warning" style="display:none;">⚠️ Local storage unavailable (sandboxed mode). Data will not persist across sessions.</div>
     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div class="stats-row" style="flex: 1; margin-bottom:0;">
             <div class="stat-card"><div class="stat-label">total parts</div><div class="stat-number" id="totalParts">0</div></div>
@@ -213,11 +241,10 @@
         </div>
     </div>
     <div class="purchase-summary-lines" id="purchaseLinesContainer">
-        <div>🔹 21‑03‑2026 — total 34 parts —  ₹38484</div>
-        <div>🔹 18‑03‑2026 — total 22 parts —  ₹21500</div>
-        <div>🔹 15‑03‑2026 — total 41 parts —  ₹57620</div>
+        <div>🔹 21‑03‑2026 — total 34 parts — ₹38484</div>
+        <div>🔹 18‑03‑2026 — total 22 parts — ₹21500</div>
+        <div>🔹 15‑03‑2026 — total 41 parts — ₹57620</div>
     </div>
-
     <!-- MAIN ROW -->
     <div class="row-split">
         <!-- LEFT CARD: parts table (no vendor) -->
@@ -241,7 +268,6 @@
                 <button class="btn" id="addPartBtn">➕ ADD PART</button>
             </div>
         </div>
-
         <!-- RIGHT CARD: usage entry + history + 12 tipper dropdown -->
         <div class="card">
             <h2>🔧 RECORD PART USAGE</h2>
@@ -280,14 +306,12 @@
                 </div>
                 <p style="margin:16px 0 6px; font-size:0.9rem; color:#1e3a5f;">⚡ stock decreases, usage value (₹) calculated.</p>
             </div>
-
             <!-- usage history -->
             <h2 style="margin-top:24px;">📜 USAGE HISTORY</h2>
             <div id="historyContainer" style="max-height:300px; overflow-y:auto; padding-right:6px;"></div>
             <button class="clear-btn" id="clearHistoryBtn">clear history (local)</button>
         </div>
     </div>
-
     <!-- REPORT SECTION: last 7 days + download, with enhanced date grouping styles -->
     <div class="report-note" id="reportSection">
         <h3>
@@ -299,12 +323,10 @@
         <div id="reportContent" class="report-lines"></div>
         <div id="tipperWiseSummary" class="tipper-sum-block"></div>
     </div>
-
     <div class="footer-tip">
         ⚙️ <strong>updates:</strong> engine oil ₹36000/60L → ₹600 per litre. Usage shows cost in ₹.
     </div>
 </div>
-
 <script>
 (function() {
     let parts = [
@@ -322,16 +344,42 @@
         { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: '', lastPrice: 3800, lastPurchaseDate: '2025-03-05' }
     ];
     let usageHistory = [];
+    let storageAvailable = true;
+
+    function testStorage() {
+        try {
+            localStorage.setItem('test', 'test');
+            localStorage.removeItem('test');
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
 
     function loadFromStorage() {
-        const savedParts = localStorage.getItem('tipper_parts_inr_v2');
-        const savedHistory = localStorage.getItem('tipper_history_inr_v2');
-        if (savedParts) { try { parts = JSON.parse(savedParts); } catch(e){} }
-        if (savedHistory) { try { usageHistory = JSON.parse(savedHistory); } catch(e){} }
+        if (!storageAvailable) return;
+        try {
+            const savedParts = localStorage.getItem('tipper_parts_inr_v2');
+            const savedHistory = localStorage.getItem('tipper_history_inr_v2');
+            if (savedParts) { parts = JSON.parse(savedParts); }
+            if (savedHistory) { usageHistory = JSON.parse(savedHistory); }
+        } catch(e) {
+            console.warn('Failed to load from storage:', e);
+            storageAvailable = false;
+            document.getElementById('storageWarning').style.display = 'block';
+        }
     }
+
     function saveToStorage() {
-        localStorage.setItem('tipper_parts_inr_v2', JSON.stringify(parts));
-        localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
+        if (!storageAvailable) return;
+        try {
+            localStorage.setItem('tipper_parts_inr_v2', JSON.stringify(parts));
+            localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
+        } catch(e) {
+            console.warn('Failed to save to storage:', e);
+            storageAvailable = false;
+            document.getElementById('storageWarning').style.display = 'block';
+        }
     }
 
     function formatDateDDMMYYYY(dateStr) {
@@ -345,7 +393,6 @@
             return `${day}-${month}-${year}`;
         } catch { return dateStr; }
     }
-
     function renderPartMaster() {
         const tbody = document.getElementById('partMasterBody');
         let html = '';
@@ -360,7 +407,6 @@
         });
         tbody.innerHTML = html;
     }
-
     function renderDropdown() {
         const select = document.getElementById('partSelectDropdown');
         let options = '';
@@ -370,7 +416,6 @@
         select.innerHTML = options;
         if (parts.length) { select.selectedIndex = 0; updateSelectedHint(); }
     }
-
     function updateSelectedHint() {
         const select = document.getElementById('partSelectDropdown');
         const opt = select.options[select.selectedIndex];
@@ -381,7 +426,6 @@
             hint.innerText = `📦 current stock: ${stock} ${unit}`;
         } else hint.innerText = '-- no part';
     }
-
     function renderHistory() {
         const container = document.getElementById('historyContainer');
         if (!usageHistory.length) {
@@ -403,7 +447,6 @@
         });
         container.innerHTML = html;
     }
-
     function updateStats() {
         document.getElementById('totalParts').innerText = parts.length;
         document.getElementById('lowStockCount').innerText = parts.filter(p => p.stock <= 2).length;
@@ -412,20 +455,19 @@
         usageHistory.forEach(e => { if (e.date) { try { let d = new Date(e.date); if (d.getMonth()===month && d.getFullYear()===year) monthCount++; }catch{}} });
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
-
-    // generate report with EXACT format: date groups + structured spans for readability
+    // generate report with single-line entries, date totals, and enhanced tipper summary
     function generateReport() {
         const container = document.getElementById('reportContent');
         const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
-        if (!usageHistory.length) { 
+        if (!usageHistory.length) {
             container.innerHTML = '<span style="padding:20px; display:block;">📭 No entries yet.</span>';
             tipperSummaryDiv.innerText = '⏳ No data for tipper wise.';
             return;
         }
-        const today = new Date(); 
+        const today = new Date();
         const sevenAgo = new Date(today); sevenAgo.setDate(today.getDate()-7);
         let recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date));
-        
+       
         // group by formatted date DD-MM-YYYY
         const dateGroups = {};
         recent.forEach(e => {
@@ -439,40 +481,47 @@
             let [db, mb, yb] = b.split('-');
             return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`); // descending
         });
-
         let htmlContent = '';
+        let grandTotalCost = 0;
         for (let d of sortedDates) {
             const entries = dateGroups[d];
+            let dateTotalCost = 0;
             // date heading as styled block
-            htmlContent += `<span class="report-date-head">📆 ${d}  (${entries.length} usage)</span>`;
+            htmlContent += `<span class="report-date-head">📆 ${d} (${entries.length} usage)</span>`;
             entries.forEach(e => {
                 const usageVal = (e.priceAtUse * e.quantity).toFixed(2);
-                // each entry inside a card-like block with clear lines
-                htmlContent += `<span class="report-entry">`;
-                htmlContent += `<span class="entry-line"><strong>🚛 ${e.vehicle}</strong></span>`;
-                htmlContent += `<span class="entry-line">🔧 ${e.partName}  qty:${e.quantity}</span>`;
-                htmlContent += `<span class="entry-line">💰 ₹${usageVal}</span>`;
-                htmlContent += `</span>`;
+                dateTotalCost += parseFloat(usageVal);
+                grandTotalCost += parseFloat(usageVal);
+                // single-line entry with dashes
+                htmlContent += `<span class="report-entry">-🚛 ${e.vehicle} - 🔧 ${e.partName} qty:${e.quantity} - 💰 ₹${usageVal}</span>`;
             });
+            // date total
+            htmlContent += `<span class="report-date-total">💰 date total: ₹${dateTotalCost.toFixed(2)}</span>`;
         }
-        htmlContent += `<span class="report-total">📊 total recent: ${recent.length}</span>`;
+        htmlContent += `<span class="report-total">📊 overall total (7 days): ${recent.length} usages | ₹${grandTotalCost.toFixed(2)}</span>`;
         container.innerHTML = htmlContent;
-
-        // tipper wise summary (last 7 days) with enhanced style
+        // enhanced tipper wise summary (last 7 days) with styles and oil unit handling
         const tipperSum = {};
         recent.forEach(e => {
             const v = e.vehicle;
-            if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0 };
+            const isOil = e.partName.includes('Engine oil') && e.unit === 'litre';
+            const unitLabel = isOil ? 'lts' : 'parts';
+            if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0, unit: unitLabel };
+            else if (tipperSum[v].unit !== unitLabel) tipperSum[v].unit = 'mixed'; // if mixed, use 'parts'
             tipperSum[v].count += e.quantity;
             tipperSum[v].totalCost += (e.priceAtUse * e.quantity);
         });
         let tipLines = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY (last 7 days)</span>';
+        let overallTipperTotal = 0;
         Object.keys(tipperSum).sort().forEach(t => {
-            tipLines += `${t} 🔧 parts used: ${tipperSum[t].count} | ₹${tipperSum[t].totalCost.toFixed(2)}\n`;
+            const sum = tipperSum[t];
+            const unitDisplay = sum.unit === 'lts' ? '<span class="oil-unit">lts</span>' : (sum.unit === 'mixed' ? 'parts/units' : sum.unit);
+            tipLines += `<span class="tipper-line">${t} 🔧 ${sum.count} ${unitDisplay} used | ₹${sum.totalCost.toFixed(2)}</span>`;
+            overallTipperTotal += sum.totalCost;
         });
-        tipperSummaryDiv.innerText = tipLines;
+        tipLines += `<span class="tipper-total">📊 fleet total: ₹${overallTipperTotal.toFixed(2)}</span>`;
+        tipperSummaryDiv.innerHTML = tipLines;
     }
-
     function downloadReport() {
         const todayStr = new Date().toISOString().slice(0,10);
         const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate()-7);
@@ -484,54 +533,67 @@
             return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
         });
         let content = `FLEET USAGE REPORT (last 7 days)\ngenerated\n⬇️ Download report (TXT)\n`;
+        let grandTotalCost = 0;
         for (let d of sortedDates) {
             const entries = dateGroups[d];
+            let dateTotalCost = 0;
             content += `📆 ${d} (${entries.length} usage)\n`;
             entries.forEach(e => {
                 const usageVal = (e.priceAtUse * e.quantity).toFixed(2);
-                content += `🚛 ${e.vehicle}\n${e.partName} qty:${e.quantity}\n₹${usageVal}\n`;
+                dateTotalCost += parseFloat(usageVal);
+                grandTotalCost += parseFloat(usageVal);
+                content += `-🚛 ${e.vehicle} - 🔧 ${e.partName} qty:${e.quantity} - 💰 ₹${usageVal}\n`;
             });
+            content += `💰 date total: ₹${dateTotalCost.toFixed(2)}\n`;
         }
-        content += `total recent: ${recent.length}\n\n`;
+        content += `📊 overall total (7 days): ${recent.length} usages | ₹${grandTotalCost.toFixed(2)}\n\n`;
         const tipperSum = {};
-        recent.forEach(e => { const v = e.vehicle; if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0 }; tipperSum[v].count += e.quantity; tipperSum[v].totalCost += (e.priceAtUse * e.quantity); });
-        Object.keys(tipperSum).sort().forEach(t => {
-            content += `${t} 🔧 parts used: ${tipperSum[t].count} | ₹${tipperSum[t].totalCost.toFixed(2)}\n`;
+        recent.forEach(e => { 
+            const v = e.vehicle; 
+            const isOil = e.partName.includes('Engine oil') && e.unit === 'litre';
+            const unitLabel = isOil ? 'lts' : 'parts';
+            if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0, unit: unitLabel };
+            else if (tipperSum[v].unit !== unitLabel) tipperSum[v].unit = 'mixed';
+            tipperSum[v].count += e.quantity; 
+            tipperSum[v].totalCost += (e.priceAtUse * e.quantity); 
         });
-
+        let overallTipperTotal = 0;
+        Object.keys(tipperSum).sort().forEach(t => {
+            const sum = tipperSum[t];
+            const unitDisplay = sum.unit === 'lts' ? 'lts' : (sum.unit === 'mixed' ? 'parts/units' : sum.unit);
+            content += `${t} 🔧 ${sum.count} ${unitDisplay} used | ₹${sum.totalCost.toFixed(2)}\n`;
+            overallTipperTotal += sum.totalCost;
+        });
+        content += `📊 fleet total: ₹${overallTipperTotal.toFixed(2)}\n`;
         const blob = new Blob([content], {type:'text/plain'}); const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `tipper_${todayStr}.txt`; a.click(); URL.revokeObjectURL(url);
     }
-
     function recordUsage() {
         const select = document.getElementById('partSelectDropdown');
         const selectedId = select.value; if (!selectedId) { alert('select part'); return; }
         const part = parts.find(p => p.id === selectedId); if (!part) return;
         let qty = parseInt(document.getElementById('usedQty').value, 10); if (isNaN(qty)||qty<1) qty=1;
         if (part.stock < qty) { alert(`only ${part.stock} left`); return; }
-        
+       
         const vehicleSelect = document.getElementById('vehicleSelect');
         const vehicle = vehicleSelect.options[vehicleSelect.selectedIndex].value;
         const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
-        
+       
         let perUnitPrice = part.lastPrice;
         if (part.id === 'p2' && part.unit === 'litre') {
             perUnitPrice = 36000 / 60; // 600 per litre
         } // else lastPrice is per unit
-        
+       
         part.stock -= qty;
-        usageHistory.push({ 
-            partId:part.id, partName:part.name, vehicle, date, quantity:qty, 
-            stockAfter:part.stock, unit:part.unit, 
+        usageHistory.push({
+            partId:part.id, partName:part.name, vehicle, date, quantity:qty,
+            stockAfter:part.stock, unit:part.unit,
             priceAtUse: perUnitPrice
         });
         saveToStorage(); renderPartMaster(); renderDropdown(); renderHistory(); updateStats(); updateSelectedHint(); generateReport();
     }
-
     function clearHistory() { if (confirm('clear usage history?')) { usageHistory = []; saveToStorage(); renderHistory(); updateStats(); generateReport(); } }
-
     function setDefaultDate() { document.getElementById('usageDate').value = new Date().toISOString().slice(0,10); }
-
     function addNewPart() {
         const code = document.getElementById('newPartCode').value.trim(); if(!code){alert('enter code');return;}
         const name = document.getElementById('newPartName').value.trim(); if(!name){alert('enter name');return;}
@@ -551,10 +613,9 @@
         document.getElementById('newPartPrice').value = '0';
         document.getElementById('newPartDate').value = '2026-03-21';
     }
-
     window.onload = function() {
+        storageAvailable = testStorage();
         loadFromStorage(); renderPartMaster(); renderDropdown(); renderHistory(); updateStats(); updateSelectedHint(); generateReport(); setDefaultDate();
-
         document.getElementById('partSelectDropdown').addEventListener('change', updateSelectedHint);
         document.getElementById('recordUseBtn').addEventListener('click', recordUsage);
         document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
