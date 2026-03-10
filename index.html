@@ -5,113 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tipper parts · stock & usage · 12 tippers (₹ INR)</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background: #f0f4f8; margin: 0; padding: 24px; display: flex; justify-content: center; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
+        body { background: #f4f7fc; margin: 0; padding: 24px; display: flex; justify-content: center; }
         .app { max-width: 1400px; width: 100%; }
         h1 {
-            font-size: 2rem; font-weight: 600; margin: 0 0 4px 0; color: #1a2b3c;
+            font-size: 2rem; font-weight: 600; margin: 0 0 4px 0; color: #1e3a5f;
             display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
         }
         h1 small { background: #2c3e50; color: white; padding: 4px 14px; border-radius: 40px; font-weight: 400; }
-        .fleet-badge { background: #e67e22; color: white; padding: 4px 16px; border-radius: 40px; font-weight: 500; }
+        .fleet-badge { background: #1e5f7c; color: white; padding: 4px 16px; border-radius: 40px; font-weight: 500; }
         .stats-row {
             display: flex; gap: 16px; margin: 20px 0 28px; flex-wrap: wrap;
         }
         .stat-card {
             background: white; border-radius: 28px; padding: 18px 24px;
-            box-shadow: 0 6px 14px rgba(0,20,30,0.06); flex: 1 1 160px;
-            border: 1px solid #dde3eb;
+            box-shadow: 0 6px 16px rgba(18, 42, 68, 0.06); flex: 1 1 160px;
+            border: 1px solid #dbe1ec;
         }
-        .stat-label { font-size: 0.85rem; color: #4f658a; font-weight: 500; text-transform: uppercase; }
-        .stat-number { font-size: 2rem; font-weight: 700; color: #1c2a3f; }
-        .stat-desc { color: #27ae60; font-size: 0.85rem; font-weight: 500; }
+        .stat-label { font-size: 0.85rem; color: #4f658a; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+        .stat-number { font-size: 2rem; font-weight: 700; color: #1e3a5f; }
+        .stat-desc { color: #2a7f4b; font-size: 0.85rem; font-weight: 500; }
         .row-split { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 30px; }
         .card {
             background: white; border-radius: 30px; padding: 24px 28px;
-            box-shadow: 0 12px 28px -10px rgba(0,30,40,0.12);
+            box-shadow: 0 12px 30px -8px rgba(22, 45, 70, 0.12);
             border: 1px solid #e2eaf1; flex: 1 1 400px;
         }
         .card h2 {
             margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; font-weight: 500;
             display: flex; align-items: center; gap: 10px; color: #1e3a5f;
-            border-bottom: 2px solid #e0e8f0; padding-bottom: 12px;
+            border-bottom: 2px solid #dde5ef; padding-bottom: 12px;
         }
         .part-selector { display: flex; flex-direction: column; gap: 18px; margin-bottom: 28px; }
         .select-group { display: flex; flex-direction: column; gap: 6px; }
-        .select-group label { font-weight: 600; color: #2a405c; margin-left: 6px; }
+        .select-group label { font-weight: 600; color: #1e3a5f; margin-left: 6px; }
         select, input {
-            padding: 14px 18px; border-radius: 50px; border: 1px solid #cbd6e4;
-            font-size: 1rem; background: #f9fcff;
+            padding: 14px 18px; border-radius: 50px; border: 1px solid #c2d2e6;
+            font-size: 1rem; background: #f9fcff; transition: 0.15s;
         }
-        select:focus, input:focus { border-color: #e67e22; outline: none; background: white; }
-        .use-form { background: #f7fafd; border-radius: 40px; padding: 22px; margin: 10px 0; }
+        select:focus, input:focus { border-color: #1e5f7c; outline: none; background: white; box-shadow: 0 0 0 3px rgba(30,95,124,0.1); }
+        .use-form { background: #f8fafd; border-radius: 40px; padding: 22px; margin: 10px 0; border: 1px solid #dae3ed; }
         .inline-group { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin: 15px 0 8px; }
         .qty-group {
             display: flex; align-items: center; gap: 10px; background: white;
-            padding: 5px 10px 5px 20px; border-radius: 60px; border: 1px solid #cbd6e4;
+            padding: 5px 10px 5px 20px; border-radius: 60px; border: 1px solid #c2d2e6;
         }
-        .qty-group input { width: 80px; text-align: center; padding: 10px 6px; border: none; background: #f1f7fd; border-radius: 40px; }
+        .qty-group input { width: 80px; text-align: center; padding: 10px 6px; border: none; background: #f0f6fd; border-radius: 40px; }
         .btn {
-            background: white; border: 1px solid #b9c8da; padding: 12px 28px; border-radius: 60px;
-            font-weight: 600; cursor: pointer; transition: 0.2s;
+            background: white; border: 1px solid #b0c4dc; padding: 12px 28px; border-radius: 60px;
+            font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.95rem;
         }
-        .btn-primary { background: #e67e22; border-color: #e67e22; color: white; box-shadow: 0 8px 16px -8px #e67e22b0; }
-        .btn-primary:hover { background: #cf6d17; }
-        .btn-outline { background: white; border-color: #2c3e50; }
-        .btn-outline:hover { background: #edf2f9; }
-        .btn-download { background: #1e3a5f; color: white; border: none; }
+        .btn-primary { background: #1e5f7c; border-color: #1e5f7c; color: white; box-shadow: 0 8px 16px -8px #1e5f7cb0; }
+        .btn-primary:hover { background: #164b63; border-color: #164b63; }
+        .btn-outline { background: white; border-color: #2c3e50; color: #1e3a5f; }
+        .btn-outline:hover { background: #e4ecf5; }
+        .btn-download { background: #1e3a5f; color: white; border: none; padding: 10px 24px; }
         .btn-purchase-summary {
-            background: #0b3b2f; color: white; border: none; padding: 12px 32px;
+            background: #1d5b3e; color: white; border: none; padding: 12px 32px;
             border-radius: 60px; font-weight: 600; font-size: 1rem; cursor: pointer;
-            box-shadow: 0 8px 16px -6px #0b3b2f80; margin-left: 20px;
+            box-shadow: 0 8px 16px -6px #1d5b3e80; margin-left: 20px;
         }
         .btn-purchase-summary:hover { background: #0f4e3e; }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem; }
-        th { text-align: left; padding: 14px 6px; color: #3a5670; font-weight: 600; font-size: 0.8rem; border-bottom: 2px solid #d7e0e8; }
+        th { text-align: left; padding: 14px 6px; color: #2c4a6a; font-weight: 600; font-size: 0.8rem; border-bottom: 2px solid #d7e0e8; }
         td { padding: 12px 6px; border-bottom: 1px solid #e7edf5; vertical-align: middle; }
         .badge-part { background: #eef3fa; padding: 4px 14px; border-radius: 50px; font-size: 0.85rem; display: inline-block; }
         .history-item {
-            background: #f8fbfe; border-radius: 18px; padding: 14px 18px; margin-bottom: 12px;
-            border-left: 6px solid #e67e22; box-shadow: 0 3px 8px #dde2e9;
+            background: white; border-radius: 20px; padding: 14px 18px; margin-bottom: 12px;
+            border-left: 6px solid #1e5f7c; box-shadow: 0 3px 10px #d0ddea;
+            border: 1px solid #dee9f2;
         }
         .history-item strong { color: #1e3a5f; }
-        .history-date { font-family: monospace; background: #e5ecf3; padding: 2px 10px; border-radius: 40px; font-size: 0.8rem; }
-        .stock-indicator { font-weight: 700; background: #ecf9ed; padding: 5px 14px; border-radius: 40px; display: inline-block; }
-        .low-stock { background: #fee2d9; color: #b13e00; padding: 2px 10px; border-radius: 30px; font-weight: 600; }
-        .clear-btn { background: none; border: none; color: #7f8c8d; text-decoration: underline; cursor: pointer; margin-left: 14px; font-size: 0.85rem; }
+        .history-date { font-family: monospace; background: #e1ecf5; padding: 2px 12px; border-radius: 40px; font-size: 0.8rem; color:#1e3a5f; }
+        .stock-indicator { font-weight: 700; background: #e2f0e6; padding: 5px 14px; border-radius: 40px; display: inline-block; }
+        .low-stock { background: #ffebe6; color: #b13e00; padding: 2px 10px; border-radius: 30px; font-weight: 600; }
+        .clear-btn { background: none; border: none; color: #60758b; text-decoration: underline; cursor: pointer; margin-left: 14px; font-size: 0.85rem; }
         .footer-tip {
-            background: #ebf5ee; border-radius: 50px; padding: 14px 28px; margin-top: 30px;
-            color: #194d33; font-weight: 500; border: 1px solid #b7d5b7;
+            background: #e3f0ea; border-radius: 50px; padding: 14px 28px; margin-top: 30px;
+            color: #1d5b3e; font-weight: 500; border: 1px solid #b7d5b7;
         }
         .report-note {
-            background: #fbf7f0; border-left: 6px solid #e67e22; padding: 18px 24px;
-            border-radius: 30px; margin-top: 32px; font-size: 0.95rem;
+            background: #ffffff; border-left: 6px solid #1e5f7c; padding: 18px 24px;
+            border-radius: 30px; margin-top: 32px; font-size: 0.95rem; box-shadow: 0 6px 14px #d6e2f0;
+            border: 1px solid #dae3ef;
         }
-        .report-note h3 { margin: 0 0 10px 0; color: #2c3e50; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .report-note h3 { margin: 0 0 10px 0; color: #1e3a5f; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .vendor-price { background: #e8f0fa; border-radius: 30px; padding: 2px 16px; font-size: 0.85rem; }
         .add-part-panel {
-            background: #e9f0f6; border-radius: 30px; padding: 20px; margin-top: 28px;
+            background: #ecf3fa; border-radius: 30px; padding: 20px; margin-top: 28px;
             border: 1px solid #cbdae8; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
         }
         .add-part-panel input, .add-part-panel select { flex: 1 1 180px; }
-        .add-part-panel .btn { background: #2c3e50; color: white; border: none; }
-        .add-part-panel .btn:hover { background: #1e2f3e; }
+        .add-part-panel .btn { background: #1e3a5f; color: white; border: none; }
+        .add-part-panel .btn:hover { background: #142b44; }
         .part-meta-small { font-size: 0.8rem; color: #3a5d7c; }
         .purchase-summary-lines {
-            background: #f0f6fb; border-radius: 40px; padding: 14px 22px;
-            margin-top: 12px; border: 1px solid #c2d5e6;
-            font-size: 1rem;
+            background: white; border-radius: 40px; padding: 14px 22px;
+            margin-top: 12px; border: 1px solid #c2d5e6; color: #1e3a5f;
+            font-size: 1rem; box-shadow: inset 0 2px 5px #e3ecf5;
         }
         .purchase-summary-lines div {
             padding: 6px 0; border-bottom: 1px dashed #aac2d9;
         }
         .purchase-summary-lines div:last-child { border-bottom: none; }
         .tipper-selector {
-            display: flex; gap: 8px; align-items: center; background: #ffffffd0;
+            display: flex; gap: 8px; align-items: center; background: white;
             border-radius: 60px; padding: 4px 4px 4px 18px; border: 1px solid #b9c8da;
         }
         .tipper-selector select {
-            border: none; background: transparent; font-weight: 600; padding: 8px 16px 8px 8px;
+            border: none; background: transparent; font-weight: 600; padding: 8px 16px 8px 8px; color: #1e3a5f;
         }
     </style>
 </head>
@@ -173,7 +175,7 @@
                     <input type="date" id="usageDate" style="flex:2;" value="">
                     <!-- TIPPER SELECTOR with 12 specific tippers -->
                     <div class="tipper-selector" style="flex:3;">
-                        <span style="color:#1e3a5f;">🚛</span>
+                        <span style="color:#1e5f7c;">🚛</span>
                         <select id="vehicleSelect">
                             <option value="Tipper 95">Tipper 95</option>
                             <option value="Tipper 97">Tipper 97</option>
@@ -196,9 +198,9 @@
                 </div>
                 <div style="display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;">
                     <button class="btn btn-primary" id="recordUseBtn">✅ USE selected part</button>
-                    <span id="selectedPartHint" style="align-self:center; background:#ffe6d5; border-radius:40px; padding:6px 18px;">stock: --</span>
+                    <span id="selectedPartHint" style="align-self:center; background:#e4f0fa; border-radius:40px; padding:6px 18px; color:#1e3a5f;">stock: --</span>
                 </div>
-                <p style="margin:16px 0 6px; font-size:0.9rem; color:#2c3e50;">⚡ stock decreases, usage value (₹) calculated.</p>
+                <p style="margin:16px 0 6px; font-size:0.9rem; color:#1e3a5f;">⚡ stock decreases, usage value (₹) calculated.</p>
             </div>
 
             <!-- usage history -->
@@ -212,12 +214,12 @@
     <div class="report-note" id="reportSection">
         <h3>
             📄 FLEET USAGE REPORT (last 7 days)
-            <span style="font-size:0.8rem; background: #e67e22; color:white; padding:4px 16px; border-radius:60px;">generated</span>
+            <span style="font-size:0.8rem; background: #1e5f7c; color:white; padding:4px 16px; border-radius:60px;">generated</span>
             <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
         </h3>
         <div id="reportContent"><span style="color:#4b6584;">Loading report based on usage entries...</span></div>
         <!-- new section: tipper wise sum (last 7 days) -->
-        <div id="tipperWiseSummary" style="margin-top:16px; background: #e7f0fa; border-radius: 40px; padding: 14px 22px;">
+        <div id="tipperWiseSummary" style="margin-top:16px; background: #e7f0fa; border-radius: 40px; padding: 14px 22px; color: #1e3a5f;">
             ⏳ Tipper wise consumption (last 7 days) will appear here.
         </div>
     </div>
@@ -257,21 +259,31 @@
         localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
     }
 
+    // helper to format date DD-MM-YYYY
+    function formatDateDDMMYYYY(dateStr) {
+        if (!dateStr) return '—';
+        try {
+            let d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr; // fallback
+            let day = String(d.getDate()).padStart(2,'0');
+            let month = String(d.getMonth()+1).padStart(2,'0');
+            let year = d.getFullYear();
+            return `${day}-${month}-${year}`;
+        } catch {
+            return dateStr;
+        }
+    }
+
     function renderPartMaster() {
         const tbody = document.getElementById('partMasterBody');
         let html = '';
         parts.forEach(p => {
             const lowClass = p.stock <= 2 ? 'low-stock' : '';
-            // show price in rupees, for engine oil we show per-litre equiv in small if needed? keep as lastprice (total)
-            let displayPrice = p.lastPrice;
-            if (p.id === 'p2' && p.unit === 'litre') {
-                // we can optionally indicate ₹600/L but keep table simple
-            }
             html += `<tr>
                 <td><strong>${p.name}</strong></td>
                 <td class="${lowClass}" style="font-weight:600;">${p.stock} ${p.unit}</td>
                 <td>₹${p.lastPrice?.toFixed(2) || '0.00'}</td>
-                <td>${p.lastPurchaseDate || '—'}</td>
+                <td>${p.lastPurchaseDate ? formatDateDDMMYYYY(p.lastPurchaseDate) : '—'}</td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -308,12 +320,13 @@
         let html = '';
         reversed.forEach(e => {
             const usageValue = (e.priceAtUse && e.quantity) ? (e.priceAtUse * e.quantity) : 0;
+            const displayDate = e.date ? formatDateDDMMYYYY(e.date) : '—';
             html += `<div class="history-item">
-                <div style="display:flex; justify-content:space-between;"><span><strong>${e.partName}</strong></span><span class="history-date">📅 ${e.date}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span><strong>${e.partName}</strong></span><span class="history-date">📅 ${displayDate}</span></div>
                 <div style="margin-top:8px; display:flex; gap:20px; flex-wrap:wrap;">
                     <span>🚛 ${e.vehicle}</span><span>🔢 qty: <strong>${e.quantity}</strong></span><span>📉 after: <strong>${e.stockAfter} ${e.unit}</strong></span>
                 </div>
-                <div style="font-size:0.9rem; background:#f1e8d9; padding:2px 12px; border-radius:30px; display:inline-block;">💰 usage value: ₹${usageValue.toFixed(2)}</div>
+                <div style="font-size:0.9rem; background:#eaf1d9; padding:2px 12px; border-radius:30px; display:inline-block;">💰 usage value: ₹${usageValue.toFixed(2)}</div>
             </div>`;
         });
         container.innerHTML = html;
@@ -328,7 +341,7 @@
         document.getElementById('monthlyUsage').innerText = monthCount;
     }
 
-    // generate report with date-wise grouping and tipper-wise sum for last 7 days
+    // generate report with date-wise grouping and tipper-wise sum for last 7 days — dates as DD-MM-YYYY
     function generateReport() {
         const container = document.getElementById('reportContent');
         const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
@@ -347,17 +360,22 @@
             return;
         }
 
-        // Group by date for display
+        // Group by date for display (using formatted date string DD-MM-YYYY)
         let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
         const dateMap = new Map();
         recent.forEach(e => {
-            if (!dateMap.has(e.date)) dateMap.set(e.date, []);
-            dateMap.get(e.date).push(e);
+            const formatted = formatDateDDMMYYYY(e.date);
+            if (!dateMap.has(formatted)) dateMap.set(formatted, []);
+            dateMap.get(formatted).push(e);
         });
-        const sortedDates = Array.from(dateMap.keys()).sort((a,b)=>new Date(b)-new Date(a));
-        for (let d of sortedDates) {
+        const sortedFormattedDates = Array.from(dateMap.keys()).sort((a,b) => {
+            // convert back to compare as dates DD-MM-YYYY -> YYYY-MM-DD
+            const parse = (s) => { let [d,m,y]=s.split('-'); return new Date(`${y}-${m}-${d}`); };
+            return parse(b) - parse(a);
+        });
+        for (let d of sortedFormattedDates) {
             const entries = dateMap.get(d);
-            html += `<div style="background:#ffffffd6; border-radius:50px; padding:10px 18px; margin-bottom:6px; border:1px solid #e6dac8;">
+            html += `<div style="background:#ffffffd6; border-radius:50px; padding:10px 18px; margin-bottom:6px; border:1px solid #d6dcc8;">
                 <span style="font-weight:700;">📆 ${d}</span> (${entries.length} usage)`;
             entries.forEach(e => {
                 let val = (e.priceAtUse * e.quantity).toFixed(2);
@@ -386,11 +404,14 @@
 
     function downloadReport() {
         const todayStr = new Date().toISOString().slice(0,10);
-        let content = `TIPPER REPORT (last 7d) ${todayStr} (₹ INR)\n================\n`;
+        let content = `TIPPER REPORT (last 7d) ${formatDateDDMMYYYY(todayStr)} (₹ INR)\n================\n`;
         const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate()-7);
         const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(b.date)-new Date(a.date));
         if (!recent.length) content += 'No usage.\n';
-        else recent.forEach(e => content += `${e.date} | ${e.partName} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter} | usage value: ₹${(e.priceAtUse*e.quantity).toFixed(2)}\n`);
+        else recent.forEach(e => {
+            const formattedDate = formatDateDDMMYYYY(e.date);
+            content += `${formattedDate} | ${e.partName} | ${e.vehicle} | qty:${e.quantity} | stock after:${e.stockAfter} | usage value: ₹${(e.priceAtUse*e.quantity).toFixed(2)}\n`;
+        });
         const blob = new Blob([content], {type:'text/plain'}); const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `tipper_${todayStr}.txt`; a.click(); URL.revokeObjectURL(url);
     }
