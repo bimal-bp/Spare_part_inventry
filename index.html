@@ -230,9 +230,7 @@
         </div>
     </div>
     <div class="purchase-summary-lines" id="purchaseLinesContainer">
-        <div>🔹 21‑03‑2026 — total 34 parts — ₹38484</div>
-        <div>🔹 18‑03‑2026 — total 22 parts — ₹21500</div>
-        <div>🔹 15‑03‑2026 — total 41 parts — ₹57620</div>
+        <div>🔹 fresh start — no purchase data yet</div>
     </div>
 
     <!-- MAIN ROW -->
@@ -317,14 +315,15 @@
     </div>
 
     <div class="footer-tip">
-        ⚙️ <strong>updates:</strong> engine oil ₹36000/60L → ₹600 per litre. Usage shows cost in ₹.
+        ⚙️ <strong>updates:</strong> SDLG Gear Oil ₹36000/60L → ₹600 per litre. Usage shows cost in ₹.
     </div>
 </div>
 
 <script>
 (function() {
+    // ========== FRESH PARTS LIST (exactly as requested) ==========
     let parts = [
-        { id: 'p1', code: 'TIP-FIL-001', name: 'SDLG Hydrulic Oil', stock: 13, unit: 'bucket ', vendor: '', lastPrice: 22450, lastPurchaseDate: '2025-02-10' },
+        { id: 'p1', code: 'TIP-FIL-001', name: 'SDLG Hydrulic Oil', stock: 13, unit: 'bucket', vendor: '', lastPrice: 22450, lastPurchaseDate: '2025-02-10' },
         { id: 'p2', code: 'TIP-OIL-015', name: 'SDLG Gear Oil', stock: 3, unit: 'bucket', vendor: '', lastPrice: 36000, lastPurchaseDate: '2025-03-01' },
         { id: 'p3', code: 'TIP-BEL-003', name: 'SDLG Engine Oil', stock: 3, unit: 'bucket', vendor: '', lastPrice: 1890, lastPurchaseDate: '2025-01-18' },
         { id: 'p4', code: 'TIP-AIR-022', name: 'U- Clamp', stock: 3, unit: 'pcs', vendor: '', lastPrice: 3700, lastPurchaseDate: '2025-02-22' },
@@ -337,31 +336,19 @@
         { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre', stock: 4, unit: 'pcs', vendor: '', lastPrice: 5500, lastPurchaseDate: '2025-01-12' },
         { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: '', lastPrice: 3800, lastPurchaseDate: '2025-03-05' }
     ];
+
+    // usageHistory starts empty (fresh)
     let usageHistory = [];
 
-    function seedDemoEntries() {
-        if (usageHistory.length === 0) {
-            const today = new Date();
-            const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
-            const daybefore = new Date(today); daybefore.setDate(today.getDate()-3);
-            usageHistory.push({ partId: 'p2', partName: 'Engine oil 15W40', vehicle: 'Tipper 28', date: yesterday.toISOString().slice(0,10), quantity: 20, stockAfter: 40, unit: 'litre', priceAtUse: 600 });
-            usageHistory.push({ partId: 'p5', partName: 'Brake chamber rear', vehicle: 'Tipper 28', date: daybefore.toISOString().slice(0,10), quantity: 1, stockAfter: 1, unit: 'pcs', priceAtUse: 8950 });
-            usageHistory.push({ partId: 'p2', partName: 'Engine oil 15W40', vehicle: 'Tipper 81', date: yesterday.toISOString().slice(0,10), quantity: 20, stockAfter: 20, unit: 'litre', priceAtUse: 600 });
-            usageHistory.push({ partId: 'p3', partName: 'Fan belt 8PK', vehicle: 'Tipper 81', date: daybefore.toISOString().slice(0,10), quantity: 1, stockAfter: 1, unit: 'pcs', priceAtUse: 1890 });
-            usageHistory.push({ partId: 'p4', partName: 'Air filter primary', vehicle: 'Tipper 51', date: daybefore.toISOString().slice(0,10), quantity: 1, stockAfter: 2, unit: 'pcs', priceAtUse: 3700 });
-        }
-    }
-
-    function loadFromStorage() {
-        const savedParts = localStorage.getItem('tipper_parts_inr_v2');
-        const savedHistory = localStorage.getItem('tipper_history_inr_v2');
-        if (savedParts) { try { parts = JSON.parse(savedParts); } catch(e){} }
-        if (savedHistory) { try { usageHistory = JSON.parse(savedHistory); } catch(e){} }
-    }
+    // ===== NO localStorage loading – we start from scratch, but we will save later =====
     function saveToStorage() {
         localStorage.setItem('tipper_parts_inr_v2', JSON.stringify(parts));
         localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
     }
+
+    // optionally clear any previous storage (to be safe)
+    localStorage.removeItem('tipper_parts_inr_v2');
+    localStorage.removeItem('tipper_history_inr_v2');
 
     function formatDateDDMMYYYY(dateStr) {
         if (!dateStr) return '—';
@@ -566,7 +553,8 @@
         const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
 
         let perUnitPrice = part.lastPrice;
-        if (part.id === 'p2' && part.unit === 'litre') perUnitPrice = 36000 / 60;
+        // special for gear oil (bucket -> per litre if needed but keep bucket for simplicity; we show note)
+        if (part.id === 'p2' && part.unit === 'bucket') perUnitPrice = 36000 / 60; // 600 per litre
 
         part.stock -= qty;
         usageHistory.push({
@@ -621,8 +609,7 @@
     }
 
     window.onload = function() {
-        loadFromStorage();
-        seedDemoEntries();
+        // ensure no leftover storage (already removed above)
         renderPartMaster();
         renderDropdown();
         renderHistory();
