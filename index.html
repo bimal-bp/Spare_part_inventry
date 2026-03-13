@@ -219,7 +219,7 @@
 <body>
 <div class="app">
     <h1>
-        🚛 TIPPER PARTS STOCK & USAGE (₹ INR)
+        🚛 TIPPER PARTS STOCK & USAGE 
         <span class="fleet-badge">12 tippers</span>
     </h1>
     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -230,7 +230,6 @@
         </div>
     </div>
     <div class="purchase-summary-lines" id="purchaseLinesContainer">
-        <div>🔹 fresh start — no purchase data yet</div>
     </div>
 
     <!-- MAIN ROW -->
@@ -293,7 +292,6 @@
                     <button class="btn btn-primary" id="recordUseBtn">✅ USE selected part</button>
                     <span id="selectedPartHint" style="align-self:center; background:#e4f0fa; border-radius:40px; padding:6px 18px; color:#1e3a5f;">stock: --</span>
                 </div>
-                <p style="margin:16px 0 6px; font-size:0.9rem; color:#1e3a5f;">⚡ stock decreases, usage value (₹) calculated.</p>
             </div>
 
             <!-- usage history -->
@@ -306,8 +304,7 @@
     <!-- REPORT SECTION – now simplified -->
     <div class="report-note" id="reportSection">
         <h3>
-            📄 FLEET USAGE REPORT (last 7 days)
-            <span style="font-size:0.8rem; background: #1e5f7c; color:white; padding:4px 16px; border-radius:60px;">generated</span>
+            📄 FLEET USAGE REPORT
             <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
         </h3>
         <div id="reportContent" class="report-lines"></div>
@@ -323,18 +320,18 @@
 (function() {
     // ========== FRESH PARTS LIST (exactly as requested) ==========
     let parts = [
-        { id: 'p1', code: 'TIP-FIL-001', name: 'SDLG Hydrulic Oil', stock: 13, unit: 'bucket', vendor: '', lastPrice: 22450, lastPurchaseDate: '2025-02-10' },
-        { id: 'p2', code: 'TIP-OIL-015', name: 'SDLG Gear Oil', stock: 3, unit: 'bucket', vendor: '', lastPrice: 36000, lastPurchaseDate: '2025-03-01' },
-        { id: 'p3', code: 'TIP-BEL-003', name: 'SDLG Engine Oil', stock: 3, unit: 'bucket', vendor: '', lastPrice: 1890, lastPurchaseDate: '2025-01-18' },
-        { id: 'p4', code: 'TIP-AIR-022', name: 'U- Clamp', stock: 3, unit: 'pcs', vendor: '', lastPrice: 3700, lastPurchaseDate: '2025-02-22' },
-        { id: 'p5', code: 'TIP-BRK-101', name: 'Air filter', stock: 2, unit: 'pcs', vendor: '', lastPrice: 8950, lastPurchaseDate: '2025-03-10' },
-        { id: 'p6', code: 'TIP-CLP-001', name: 'Loader Pins', stock: 14, unit: 'pcs', vendor: '', lastPrice: 14500, lastPurchaseDate: '2025-02-05' },
-        { id: 'p7', code: 'TIP-HYD-880', name: 'Air drum', stock: 2, unit: 'drum', vendor: '', lastPrice: 21000, lastPurchaseDate: '2025-03-14' },
-        { id: 'p8', code: 'TIP-ALT-07', name: 'Coolent', stock: 2, unit: 'pcs', vendor: '', lastPrice: 31000, lastPurchaseDate: '2024-12-01' },
-        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set', vendor: '', lastPrice: 4230, lastPurchaseDate: '2025-02-28' },
+        { id: 'p1', code: 'TIP-FIL-001', name: 'SDLG Hydrulic Oil', stock: 95, unit: ' 12 - bucket', vendor: '', lastPrice: 450, lastPurchaseDate: '2025-02-10' },
+        { id: 'p2', code: 'TIP-OIL-015', name: 'SDLG Gear Oil', stock: 63, unit: '3- bucket', vendor: '', lastPrice: 360, lastPurchaseDate: '2025-03-01' },
+        { id: 'p3', code: 'TIP-BEL-003', name: 'SDLG Engine Oil', stock: 123, unit: '5- bucket', vendor: '', lastPrice: 890, lastPurchaseDate: '2025-01-18' },
+        { id: 'p4', code: 'TIP-AIR-022', name: 'U- Clamp', stock: 3, unit: 'pcs', vendor: '', lastPrice: 700, lastPurchaseDate: '2025-02-22' },
+        { id: 'p5', code: 'TIP-BRK-101', name: 'Air filter', stock: 2, unit: 'pcs', vendor: '', lastPrice: 950, lastPurchaseDate: '2025-03-10' },
+        { id: 'p6', code: 'TIP-CLP-001', name: 'Loader Pins', stock: 14, unit: 'pcs', vendor: '', lastPrice: 4500, lastPurchaseDate: '2025-02-05' },
+        { id: 'p7', code: 'TIP-HYD-880', name: 'Air drum', stock: 2, unit: 'drum', vendor: '', lastPrice: 1000, lastPurchaseDate: '2025-03-14' },
+        { id: 'p8', code: 'TIP-ALT-07', name: 'Coolent', stock: 2, unit: 'pcs', vendor: '', lastPrice: 1000, lastPurchaseDate: '2024-12-01' },
+        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set', vendor: '', lastPrice: 230, lastPurchaseDate: '2025-02-28' },
         { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs', vendor: '', lastPrice: 1275, lastPurchaseDate: '2025-03-20' },
-        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre', stock: 4, unit: 'pcs', vendor: '', lastPrice: 5500, lastPurchaseDate: '2025-01-12' },
-        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: '', lastPrice: 3800, lastPurchaseDate: '2025-03-05' }
+        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre', stock: 4, unit: 'pcs', vendor: '', lastPrice: 500, lastPurchaseDate: '2025-01-12' },
+        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: '', lastPrice: 800, lastPurchaseDate: '2025-03-05' }
     ];
 
     // usageHistory starts empty (fresh)
@@ -435,7 +432,7 @@
         const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
         if (!usageHistory.length) {
             container.innerHTML = '<span style="padding:20px; display:block;">📭 No entries yet.</span>';
-            tipperSummaryDiv.innerHTML = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY (last 7 days)</span><span style="display:block; padding:10px;">📭 No data</span>';
+            tipperSummaryDiv.innerHTML = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY </span><span style="display:block; padding:10px;">📭 No data</span>';
             return;
         }
 
@@ -466,7 +463,7 @@
                 dayTotal += usageVal;
                 htmlContent += `<div class="report-entry">
                     <strong>🚛 ${e.vehicle}</strong> 
-                    — 🔧 ${e.partName} ${e.unit === 'litre' ? '⛽' : ''}
+                    — 🔧 ${e.partName} ${e.unit === 'bucket' ? '🛢️' : ''}
                     — qty <strong>${e.quantity}</strong> 
                     — 💰 ₹${usageVal.toFixed(2)}
                 </div>`;
@@ -483,7 +480,7 @@
             if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0, oilLitres:0 };
             tipperSum[v].count += e.quantity;
             tipperSum[v].totalCost += (e.priceAtUse * e.quantity);
-            if (e.partName.toLowerCase().includes('engine oil')) tipperSum[v].oilLitres += e.quantity;
+            if (e.partName.toLowerCase().includes('hydrulic')) tipperSum[v].oilLitres += e.quantity;
         });
 
         let tipHtml = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY (last 7 days)</span>';
@@ -529,7 +526,7 @@
             if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0, oilLitres:0 }; 
             tipperSum[v].count += e.quantity; 
             tipperSum[v].totalCost += (e.priceAtUse * e.quantity); 
-            if (e.partName.toLowerCase().includes('engine oil')) tipperSum[v].oilLitres += e.quantity; 
+            if (e.partName.toLowerCase().includes('hydrulic')) tipperSum[v].oilLitres += e.quantity; 
         });
         Object.keys(tipperSum).sort().forEach(t => {
             const oilNote = tipperSum[t].oilLitres ? ` | oil ${tipperSum[t].oilLitres} L` : '';
@@ -553,8 +550,15 @@
         const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
 
         let perUnitPrice = part.lastPrice;
-        // special for gear oil (bucket -> per litre if needed but keep bucket for simplicity; we show note)
-        if (part.id === 'p2' && part.unit === 'bucket') perUnitPrice = 36000 / 60; // 600 per litre
+        // --- special handling for oil pricing exactly as requested ---
+        // Hydraulic Oil (p1) bucket price ₹22450 remains same (per bucket) – usage value = ₹22450 * qty
+        if (part.id === 'p1') {
+            perUnitPrice = part.lastPrice;   // 22450 per bucket, no division – usage value shows full bucket price
+        }
+        // Gear Oil (p2) bucket price 36000 but we treat as per litre (600/L). For each usage quantity = litres.
+        if (part.id === 'p2' && part.unit === 'bucket') {
+            perUnitPrice = 36000 / 60; // 600 per litre
+        }
 
         part.stock -= qty;
         usageHistory.push({
