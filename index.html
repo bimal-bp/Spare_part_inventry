@@ -1,640 +1,1191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tipper parts · stock & usage · compact report</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
-        body { background: #f4f7fc; margin: 0; padding: 24px; display: flex; justify-content: center; }
-        .app { max-width: 1400px; width: 100%; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGX Fleet Maintenance</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface2: #f2f4f7;
+  --border: #e2e6ed;
+  --text: #111827;
+  --text2: #4b5563;
+  --text3: #9ca3af;
+  --accent: #1a3c5e;
+  --accent2: #2563eb;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
 
-        h1 {
-            font-size: 2rem; font-weight: 600; margin: 0 0 4px 0; color: #1e3a5f;
-            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-        }
-        h1 small { background: #2c3e50; color: white; padding: 4px 14px; border-radius: 40px; font-weight: 400; }
-        .fleet-badge { background: #1e5f7c; color: white; padding: 4px 16px; border-radius: 40px; font-weight: 500; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .stats-row {
-            display: flex; gap: 16px; margin: 20px 0 28px; flex-wrap: wrap;
-        }
-        .stat-card {
-            background: white; border-radius: 28px; padding: 18px 24px;
-            box-shadow: 0 6px 16px rgba(18, 42, 68, 0.06); flex: 1 1 160px;
-            border: 1px solid #dbe1ec;
-        }
-        .stat-label { font-size: 0.85rem; color: #4f658a; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
-        .stat-number { font-size: 2rem; font-weight: 700; color: #1e3a5f; }
-        .stat-desc { color: #2a7f4b; font-size: 0.85rem; font-weight: 500; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
 
-        .row-split { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 30px; }
-        .card {
-            background: white; border-radius: 30px; padding: 24px 28px;
-            box-shadow: 0 12px 30px -8px rgba(22, 45, 70, 0.12);
-            border: 1px solid #e2eaf1; flex: 1 1 400px;
-        }
-        .card h2 {
-            margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; font-weight: 500;
-            display: flex; align-items: center; gap: 10px; color: #1e3a5f;
-            border-bottom: 2px solid #dde5ef; padding-bottom: 12px;
-        }
+/* ====== SPLASH SCREEN ====== */
+#splash {
+  position: fixed; inset: 0;
+  background: #0b1e36;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+#splash canvas { position: absolute; inset: 0; }
+.splash-content {
+  position: relative; z-index: 2;
+  text-align: center;
+  animation: splashIn 0.8s ease both;
+}
+@keyframes splashIn {
+  from { opacity:0; transform: translateY(30px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.splash-icon {
+  font-size: 5rem; margin-bottom: 16px;
+  animation: truckBounce 1.2s ease infinite alternate;
+  display: inline-block;
+}
+@keyframes truckBounce {
+  from { transform: translateY(0) rotate(-2deg); }
+  to   { transform: translateY(-12px) rotate(2deg); }
+}
+.splash-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 3.5rem; color: #fff; letter-spacing: -1px;
+}
+.splash-title span { color: #60a5fa; }
+.splash-sub { color: #94a3b8; margin-top: 8px; font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; }
+.splash-bar-wrap { width: 260px; background: rgba(255,255,255,0.1); border-radius: 40px; height: 5px; margin: 28px auto 0; overflow: hidden; }
+.splash-bar { height: 100%; background: #60a5fa; border-radius: 40px; width: 0; animation: splashLoad 2s ease forwards 0.3s; }
+@keyframes splashLoad { from{width:0} to{width:100%} }
+.splash-parts-float {
+  position: absolute; width: 100%; height: 100%;
+  top: 0; left: 0; pointer-events: none; overflow: hidden;
+}
+.gear-float {
+  position: absolute; font-size: 2.5rem; opacity: 0.08;
+  animation: gearSpin 8s linear infinite;
+}
+@keyframes gearSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.gear-float:nth-child(1){top:10%;left:5%;animation-duration:12s;}
+.gear-float:nth-child(2){top:60%;right:8%;animation-duration:9s;animation-direction:reverse;}
+.gear-float:nth-child(3){bottom:15%;left:15%;animation-duration:15s;}
+.gear-float:nth-child(4){top:30%;right:20%;font-size:1.5rem;animation-duration:6s;}
+.splash-vehicles {
+  display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center;
+  font-size: 0.78rem; color: #64748b;
+}
+.splash-vehicles span {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  padding: 4px 12px; border-radius: 40px; font-family: 'JetBrains Mono', monospace;
+  color: #93c5fd;
+  animation: plateIn 0.4s ease both;
+}
+@keyframes plateIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
 
-        .part-selector { display: flex; flex-direction: column; gap: 18px; margin-bottom: 28px; }
-        .select-group { display: flex; flex-direction: column; gap: 6px; }
-        .select-group label { font-weight: 600; color: #1e3a5f; margin-left: 6px; }
-        select, input {
-            padding: 14px 18px; border-radius: 50px; border: 1px solid #c2d2e6;
-            font-size: 1rem; background: #f9fcff; transition: 0.15s;
-        }
-        select:focus, input:focus { border-color: #1e5f7c; outline: none; background: white; box-shadow: 0 0 0 3px rgba(30,95,124,0.1); }
+/* ====== HEADER ====== */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 0 var(--border);
+}
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem; color: var(--accent);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-badge { background: var(--accent); color: white; padding: 3px 10px; border-radius: 6px; font-family: 'DM Sans'; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab {
+  padding: 8px 20px; border-radius: 8px; border: none;
+  background: none; font-family: 'DM Sans'; font-size: 0.9rem; font-weight: 500;
+  color: var(--text2); cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-tab:hover { background: var(--surface2); color: var(--text); }
+.nav-tab.active { background: var(--accent); color: white; }
+.header-date { font-size: 0.82rem; color: var(--text3); font-family: 'JetBrains Mono'; }
 
-        .use-form { background: #f8fafd; border-radius: 40px; padding: 22px; margin: 10px 0; border: 1px solid #dae3ed; }
-        .inline-group { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin: 15px 0 8px; }
-        .qty-group {
-            display: flex; align-items: center; gap: 10px; background: white;
-            padding: 5px 10px 5px 20px; border-radius: 60px; border: 1px solid #c2d2e6;
-        }
-        .qty-group input { width: 80px; text-align: center; padding: 10px 6px; border: none; background: #f0f6fd; border-radius: 40px; }
+/* ====== MAIN LAYOUT ====== */
+main { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
 
-        .btn {
-            background: white; border: 1px solid #b0c4dc; padding: 12px 28px; border-radius: 60px;
-            font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.95rem;
-        }
-        .btn-primary { background: #1e5f7c; border-color: #1e5f7c; color: white; box-shadow: 0 8px 16px -8px #1e5f7cb0; }
-        .btn-primary:hover { background: #164b63; border-color: #164b63; }
-        .btn-outline { background: white; border-color: #2c3e50; color: #1e3a5f; }
-        .btn-outline:hover { background: #e4ecf5; }
-        .btn-download { background: #1e3a5f; color: white; border: none; padding: 10px 24px; }
-        .btn-purchase-summary {
-            background: #1d5b3e; color: white; border: none; padding: 12px 32px;
-            border-radius: 60px; font-weight: 600; font-size: 1rem; cursor: pointer;
-            box-shadow: 0 8px 16px -6px #1d5b3e80; margin-left: 20px;
-        }
-        .btn-purchase-summary:hover { background: #0f4e3e; }
+/* ====== SECTION HEADER ====== */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.75rem; color: var(--accent);
+}
+.section-sub { color: var(--text3); font-size: 0.88rem; margin-top: 2px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.95rem; }
-        th { text-align: left; padding: 14px 6px; color: #2c4a6a; font-weight: 600; font-size: 0.8rem; border-bottom: 2px solid #d7e0e8; }
-        td { padding: 12px 6px; border-bottom: 1px solid #e7edf5; vertical-align: middle; }
-        .badge-part { background: #eef3fa; padding: 4px 14px; border-radius: 50px; font-size: 0.85rem; display: inline-block; }
+/* ====== PAGE ====== */
+.page { display: none; animation: fadeUp 0.35s ease both; }
+.page.active { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-        .history-item {
-            background: white; border-radius: 20px; padding: 14px 18px; margin-bottom: 12px;
-            border-left: 6px solid #1e5f7c; box-shadow: 0 3px 10px #d0ddea;
-            border: 1px solid #dee9f2;
-        }
-        .history-item strong { color: #1e3a5f; }
-        .history-date { font-family: monospace; background: #e1ecf5; padding: 2px 12px; border-radius: 40px; font-size: 0.8rem; color:#1e3a5f; }
+/* ====== 3 MAIN BUTTONS ====== */
+.big-btn-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  margin-bottom: 36px;
+}
+.big-btn {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+}
+.big-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(37,99,235,0.04));
+  opacity: 0; transition: opacity 0.3s;
+}
+.big-btn:hover { transform: translateY(-4px) scale(1.02); box-shadow: var(--shadow-lg); border-color: var(--accent2); }
+.big-btn:hover::before { opacity: 1; }
+.big-btn.active-module { border-color: var(--accent); background: #f0f5ff; }
+.big-btn-icon { font-size: 2.8rem; margin-bottom: 12px; display: block; }
+.big-btn-label { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+.big-btn-desc { font-size: 0.82rem; color: var(--text3); margin-top: 4px; }
 
-        .stock-indicator { font-weight: 700; background: #e2f0e6; padding: 5px 14px; border-radius: 40px; display: inline-block; }
-        .low-stock { background: #ffebe6; color: #b13e00; padding: 2px 10px; border-radius: 30px; font-weight: 600; }
-        .clear-btn { background: none; border: none; color: #60758b; text-decoration: underline; cursor: pointer; margin-left: 14px; font-size: 0.85rem; }
+/* ====== CARDS ====== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card-title {
+  font-weight: 700; font-size: 1rem; color: var(--text);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
 
-        .footer-tip {
-            background: #e3f0ea; border-radius: 50px; padding: 14px 28px; margin-top: 30px;
-            color: #1d5b3e; font-weight: 500; border: 1px solid #b7d5b7;
-        }
-        .report-note {
-            background: #ffffff; border-left: 6px solid #1e5f7c; padding: 18px 24px;
-            border-radius: 30px; margin-top: 32px; font-size: 0.95rem; box-shadow: 0 6px 14px #d6e2f0;
-            border: 1px solid #dae3ef;
-        }
-        .report-note h3 { margin: 0 0 10px 0; color: #1e3a5f; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+/* ====== FORM ELEMENTS ====== */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.82rem; font-weight: 600; color: var(--text2); letter-spacing: 0.3px; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans'; font-size: 0.95rem;
+  background: var(--bg); color: var(--text);
+  transition: border 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none; border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  background: white;
+}
+.form-group select[size] { border-radius: var(--radius-sm); background: white; }
 
-        .vendor-price { background: #e8f0fa; border-radius: 30px; padding: 2px 16px; font-size: 0.85rem; }
-        .add-part-panel {
-            background: #ecf3fa; border-radius: 30px; padding: 20px; margin-top: 28px;
-            border: 1px solid #cbdae8; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
-        }
-        .add-part-panel input, .add-part-panel select { flex: 1 1 180px; }
-        .add-part-panel .btn { background: #1e3a5f; color: white; border: none; }
-        .add-part-panel .btn:hover { background: #142b44; }
+/* ====== BUTTONS ====== */
+.btn {
+  padding: 10px 22px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); font-family: 'DM Sans';
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn-primary:hover { background: #142f4f; }
+.btn-green { background: var(--green); color: white; border-color: var(--green); }
+.btn-green:hover { background: #15803d; }
+.btn-amber { background: var(--amber); color: white; border-color: var(--amber); }
+.btn-amber:hover { background: #b45309; }
+.btn-outline { background: white; color: var(--text); }
+.btn-outline:hover { background: var(--surface2); }
+.btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+.btn-danger { background: var(--red); color: white; border-color: var(--red); }
 
-        .part-meta-small { font-size: 0.8rem; color: #3a5d7c; }
-        .purchase-summary-lines {
-            background: white; border-radius: 40px; padding: 14px 22px;
-            margin-top: 12px; border: 1px solid #c2d5e6; color: #1e3a5f;
-            font-size: 1rem; box-shadow: inset 0 2px 5px #e3ecf5;
-        }
-        .purchase-summary-lines div {
-            padding: 6px 0; border-bottom: 1px dashed #aac2d9;
-        }
-        .purchase-summary-lines div:last-child { border-bottom: none; }
+/* ====== TABLE ====== */
+.table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+th { background: var(--surface2); padding: 12px 14px; text-align: left; font-size: 0.78rem; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f9fafb; }
 
-        .tipper-selector {
-            display: flex; gap: 8px; align-items: center; background: white;
-            border-radius: 60px; padding: 4px 4px 4px 18px; border: 1px solid #b9c8da;
-        }
-        .tipper-selector select {
-            border: none; background: transparent; font-weight: 600; padding: 8px 16px 8px 8px; color: #1e3a5f;
-        }
+/* ====== BADGES ====== */
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+.badge-amber { background: #fef3c7; color: #92400e; }
+.badge-blue { background: #dbeafe; color: #1e40af; }
+.badge-gray { background: #f3f4f6; color: #374151; }
 
-        /* ========== SIMPLIFIED FLEET USAGE REPORT – CLEAN & EASY TO READ ========= */
-        .report-lines {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid #d0d8e5;
-            font-family: system-ui, -apple-system, sans-serif;
-            font-size: 1rem;
-            line-height: 1.7;
-            color: #333;
-        }
-        .report-date-head {
-            display: block;
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #1e3a5f;
-            margin: 24px 0 12px 0;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .report-date-head:first-of-type {
-            margin-top: 0;
-        }
-        .report-entry {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 8px 0;
-            padding: 12px 18px;
-            background: #f8fafd;
-            border-radius: 12px;
-            border-left: 5px solid #1e5f7c;
-            font-size: 0.98rem;
-        }
-        .date-total {
-            display: block;
-            background: #f0f4fa;
-            border-radius: 12px;
-            padding: 12px 20px;
-            margin: 16px 0 8px;
-            font-weight: 700;
-            color: #1e3a5f;
-            font-size: 1.05rem;
-        }
-        .report-total {
-            display: block;
-            background: #e6f0e0;
-            color: #1e5f7c;
-            border-radius: 12px;
-            padding: 12px 24px;
-            margin-top: 20px;
-            font-weight: 700;
-            text-align: center;
-        }
+/* ====== STAT CARDS ====== */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); }
+.stat-label { font-size: 0.78rem; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-num { font-size: 2rem; font-weight: 700; color: var(--accent); margin: 4px 0 2px; font-family: 'JetBrains Mono'; }
+.stat-sub { font-size: 0.8rem; color: var(--text3); }
 
-        .tipper-sum-block {
-            background: #f8f9fc;
-            border-radius: 16px;
-            padding: 24px;
-            color: #333;
-            border: 1px solid #d0d8e5;
-            margin-top: 20px;
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-        .tipper-sum-block .tipper-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #1e3a5f;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #d0d8e5;
-            padding-bottom: 8px;
-        }
-        .tipper-sum-block .tipper-line {
-            display: block;
-            padding: 12px 18px;
-            margin: 8px 0;
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e0e8f0;
-            font-weight: 500;
-        }
-        .unit-badge {
-            background: #c8e0f0; border-radius: 30px; padding: 2px 12px; font-size:0.8rem; margin-left:5px;
-        }
-    </style>
+/* ====== VEHICLE NUMBER PLATE ====== */
+.plate {
+  font-family: 'JetBrains Mono', monospace;
+  background: #fff9e6; border: 2px solid #d97706;
+  padding: 3px 10px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; color: #92400e;
+  display: inline-block;
+}
+.plate-wh {
+  background: white; border-color: #9ca3af; color: var(--text);
+}
+
+/* ====== MODULE PANELS ====== */
+.module-panel { display: none; }
+.module-panel.active { display: block; }
+
+/* ====== HISTORY ITEMS ====== */
+.hist-item {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px 18px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  transition: box-shadow 0.2s;
+  background: white;
+}
+.hist-item:hover { box-shadow: var(--shadow); }
+.hist-item-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dot-sgx { background: var(--accent2); }
+.dot-outside { background: var(--amber); }
+.dot-repair { background: var(--red); }
+
+/* ====== EXPENSE DASHBOARD ====== */
+.expense-table-wrap { margin-top: 20px; }
+.vehicle-expense-row { 
+  display: grid; 
+  grid-template-columns: 180px 1fr 100px 100px 100px 120px;
+  gap: 0; align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.vehicle-expense-row:hover { background: #f9fafb; }
+.vehicle-expense-row:last-child { border-bottom: none; }
+.ve-cell { padding: 12px 14px; font-size: 0.88rem; }
+.ve-head { font-size: 0.75rem; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; background: var(--surface2); }
+
+/* ====== PROGRESS BAR ====== */
+.prog-bar { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; flex: 1; }
+.prog-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+/* ====== TOTAL ROW ====== */
+.total-row { background: #f0f4ff; font-weight: 700; }
+
+/* ====== EMPTY STATE ====== */
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text3); }
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+
+/* ====== SCROLLBAR ====== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+/* ====== TOAST ====== */
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--accent); color: white;
+  padding: 14px 22px; border-radius: 12px;
+  font-weight: 500; font-size: 0.9rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 999; transform: translateY(80px); opacity: 0;
+  transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  header { padding: 0 16px; }
+  .nav-tabs { display: none; }
+  main { padding: 16px; }
+  .big-btn-row { grid-template-columns: 1fr; }
+  .vehicle-expense-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 520px) {
+  .logo-text { display: none; }
+}
+
+/* ====== ANIMATIONS ====== */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.loading { animation: pulse 1.5s ease infinite; }
+
+.part-select-list { 
+  width: 100%; height: 160px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: white;
+  font-family: 'DM Sans'; font-size: 0.9rem;
+  padding: 4px;
+}
+.part-select-list:focus { outline: none; border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.part-select-list option { padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.part-select-list option:checked { background: #dbeafe; color: #1e40af; }
+
+/* Split layout */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:900px) { .split { grid-template-columns: 1fr; } }
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+</style>
 </head>
 <body>
-<div class="app">
-    <h1>
-        🚛 TIPPER PARTS STOCK & USAGE 
-        <span class="fleet-badge">12 tippers</span>
-    </h1>
-    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div class="stats-row" style="flex: 1; margin-bottom:0;">
-            <div class="stat-card"><div class="stat-label">total parts</div><div class="stat-number" id="totalParts">0</div></div>
-            <div class="stat-card"><div class="stat-label">low stock items</div><div class="stat-number" id="lowStockCount">0</div><div class="stat-desc">need reorder</div></div>
-            <div class="stat-card"><div class="stat-label">used this month</div><div class="stat-number" id="monthlyUsage">0</div></div>
-        </div>
-    </div>
-    <div class="purchase-summary-lines" id="purchaseLinesContainer">
-    </div>
 
-    <!-- MAIN ROW -->
-    <div class="row-split">
-        <!-- LEFT CARD: parts table -->
-        <div class="card">
-            <h2>📋 SPARE PARTS · stock & purchase</h2>
-            <p style="margin-top:-10px; color:#4b6584;"><strong>select part to use</strong></p>
-            <table>
-                <thead>
-                    <tr><th>Name</th><th>Stock</th><th>Last price (₹)</th><th>Purch date</th></tr>
-                </thead>
-                <tbody id="partMasterBody"></tbody>
-            </table>
-            <!-- add new part panel -->
-            <div class="add-part-panel">
-                <input type="text" id="newPartCode" placeholder="Code e.g. TIP-NEW-001" value="TIP-NEW-">
-                <input type="text" id="newPartName" placeholder="Part name">
-                <input type="number" id="newPartStock" placeholder="Stock" min="0" value="5">
-                <input type="hidden" id="newPartVendor" value="internal">
-                <input type="number" id="newPartPrice" placeholder="Price (₹)" step="0.01" value="0">
-                <input type="date" id="newPartDate" value="2026-03-21">
-                <button class="btn" id="addPartBtn">➕ ADD PART</button>
-            </div>
-        </div>
-
-        <!-- RIGHT CARD: usage entry + history -->
-        <div class="card">
-            <h2>🔧 RECORD PART USAGE</h2>
-            <div class="use-form">
-                <div class="select-group">
-                    <label>🔽 1. Select part:</label>
-                    <select id="partSelectDropdown" size="5" style="width:100%; border-radius:20px; padding:10px;"></select>
-                </div>
-                <div class="inline-group">
-                    <input type="date" id="usageDate" style="flex:2;" value="">
-                    <div class="tipper-selector" style="flex:3;">
-                        <span style="color:#1e5f7c;">🚛</span>
-                        <select id="vehicleSelect">
-                            <option value="Tipper 95">Tipper 95</option>
-                            <option value="Tipper 97">Tipper 97</option>
-                            <option value="Tipper 80">Tipper 80</option>
-                            <option value="Tipper 80">Tipper 81</option>
-                            <option value="Tipper 51">Tipper 51</option>
-                            <option value="Tipper 52">Tipper 52</option>
-                            <option value="Tipper 26">Tipper 26</option>
-                            <option value="Tipper 27">Tipper 27</option>
-                            <option value="Tipper 28">Tipper 28</option>
-                            <option value="Tipper 57">Tipper 57</option>
-                            <option value="Tipper 58">Tipper 58</option>
-                            <option value="Tipper 52">Tipper 52</option>
-                            <option value="Loader  1">Loader -1</option>
-                            <option value="Loader  2">Loader -2</option>
-                            <option value="Excv -1">Excv- 1</option>
-                            <option value="Excv -2">Excv -2</option>
-                            <option value="Other">other </option>
-                            
-                        </select>
-                    </div>
-                </div>
-                <div class="qty-group" style="margin-top:10px;">
-                    <span style="font-weight:500;">🔢 Quantity used:</span>
-                    <input type="number" id="usedQty" min="1" value="1" step="1" style="width:90px;">
-                </div>
-                <div style="display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="recordUseBtn">✅ USE selected part</button>
-                    <span id="selectedPartHint" style="align-self:center; background:#e4f0fa; border-radius:40px; padding:6px 18px; color:#1e3a5f;">stock: --</span>
-                </div>
-            </div>
-
-            <!-- usage history -->
-            <h2 style="margin-top:24px;">📜 USAGE HISTORY</h2>
-            <div id="historyContainer" style="max-height:300px; overflow-y:auto; padding-right:6px;"></div>
-            <button class="clear-btn" id="clearHistoryBtn">clear history (local)</button>
-        </div>
-    </div>
-
-    <!-- REPORT SECTION – now simplified -->
-    <div class="report-note" id="reportSection">
-        <h3>
-            📄 FLEET USAGE REPORT
-            <button class="btn btn-download" id="downloadReportBtn" style="margin-left:auto;">⬇️ Download report (TXT)</button>
-        </h3>
-        <div id="reportContent" class="report-lines"></div>
-        <div id="tipperWiseSummary" class="tipper-sum-block"></div>
-    </div>
-
-    <div class="footer-tip">
-        ⚙️ <strong>updates:</strong> SDLG Gear Oil ₹36000/60L → ₹600 per litre. Usage shows cost in ₹.
-    </div>
+<!-- ====== SPLASH ====== -->
+<div id="splash">
+  <div class="splash-parts-float">
+    <div class="gear-float">⚙️</div>
+    <div class="gear-float">🔩</div>
+    <div class="gear-float">🔧</div>
+    <div class="gear-float">⚙️</div>
+  </div>
+  <div class="splash-content">
+    <div class="splash-icon">🚛</div>
+    <div class="splash-title">SGX <span>Fleet</span></div>
+    <div class="splash-sub">Maintenance Management System</div>
+    <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+    <div class="splash-vehicles" id="splashPlates"></div>
+  </div>
 </div>
 
+<!-- ====== HEADER ====== -->
+<header>
+  <div class="logo">
+    <span>🚛</span>
+    <span class="logo-text" style="font-size:1.3rem;">SGX Fleet</span>
+    <span class="logo-badge">16 VEHICLES</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home')">Home</button>
+    <button class="nav-tab" onclick="showPage('inventory')">SGX Spares</button>
+    <button class="nav-tab" onclick="showPage('outside-purchase')">Outside Purchase</button>
+    <button class="nav-tab" onclick="showPage('outside-repair')">Outside Repair</button>
+    <button class="nav-tab" onclick="showPage('expenses')">Expenses</button>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<!-- ====== MAIN ====== -->
+<main>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="section-head">
+    <div>
+      <div class="section-title">Fleet Overview</div>
+      <div class="section-sub">16 vehicles · 12 tippers · 2 loaders · 2 excavators</div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="homeStats"></div>
+
+  <!-- 3 BIG BUTTONS -->
+  <div class="big-btn-row">
+    <div class="big-btn" onclick="showPage('inventory')" id="bbSgx">
+      <span class="big-btn-icon">🏭</span>
+      <div class="big-btn-label">SGX Spare Parts</div>
+      <div class="big-btn-desc">Record stock usage from in-house inventory</div>
+    </div>
+    <div class="big-btn" onclick="showPage('outside-purchase')" id="bbOutP">
+      <span class="big-btn-icon">🛒</span>
+      <div class="big-btn-label">Outside Purchase</div>
+      <div class="big-btn-desc">Log spare parts bought from external vendors</div>
+    </div>
+    <div class="big-btn" onclick="showPage('outside-repair')" id="bbOutR">
+      <span class="big-btn-icon">🔧</span>
+      <div class="big-btn-label">Outside Repair</div>
+      <div class="big-btn-desc">Record vehicle sent to external workshop</div>
+    </div>
+  </div>
+
+  <!-- Quick vehicle list -->
+  <div class="card">
+    <div class="card-title">🚛 Fleet Vehicles</div>
+    <div id="vehicleQuickList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px;"></div>
+  </div>
+</div>
+
+<!-- INVENTORY PAGE (SGX Spares) -->
+<div class="page" id="page-inventory">
+  <div class="section-head">
+    <div>
+      <div class="section-title">🏭 SGX Spare Parts</div>
+      <div class="section-sub">In-house inventory · record usage</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="showPage('home')">← Back</button>
+  </div>
+
+  <div class="stats-row" id="invStats"></div>
+
+  <div class="split">
+    <!-- Parts table -->
+    <div class="card">
+      <div class="card-title">📦 Stock List</div>
+      <div class="table-wrap" style="margin-bottom:20px;">
+        <table id="invTable">
+          <thead>
+            <tr>
+              <th>Part Name</th><th>Stock</th><th>Unit</th><th>₹/unit</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="invTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Add new part -->
+      <div style="border-top:1px solid var(--border); padding-top:18px; margin-top:4px;">
+        <div class="card-title" style="border:none; padding:0; margin-bottom:14px; font-size:0.88rem;">➕ Add New Part</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Part Name</label>
+            <input id="newPartName" type="text" placeholder="e.g. Brake Pad">
+          </div>
+          <div class="form-group">
+            <label>Stock Qty</label>
+            <input id="newPartStock" type="number" value="1" min="0">
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <input id="newPartUnit" type="text" placeholder="pcs / L / set">
+          </div>
+          <div class="form-group">
+            <label>Price/unit (₹)</label>
+            <input id="newPartPrice" type="number" value="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Purchase Date</label>
+            <input id="newPartDate" type="date">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="addPart()">➕ Add Part</button>
+      </div>
+    </div>
+
+    <!-- Usage form -->
+    <div class="card">
+      <div class="card-title">🔧 Record SGX Part Usage</div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Select Part</label>
+        <select class="part-select-list" id="invPartSelect" size="6"></select>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Vehicle</label>
+          <select id="invVehicle"></select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input id="invDate" type="date">
+        </div>
+        <div class="form-group">
+          <label>Qty Used</label>
+          <input id="invQty" type="number" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <input id="invNotes" type="text" placeholder="optional">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; margin-top:16px;">
+        <button class="btn btn-primary" onclick="recordSGXUsage()">✅ Record Usage</button>
+        <span id="invStockHint" style="background:var(--surface2); padding:6px 14px; border-radius:8px; font-size:0.85rem; color:var(--text2);">Select a part</span>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div class="card-title" style="border:none;padding:0;margin-bottom:12px;">📜 Recent Usage</div>
+        <div id="sgxHistContainer" style="max-height:280px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTSIDE PURCHASE PAGE -->
+<div class="page" id="page-outside-purchase">
+  <div class="section-head">
+    <div>
+      <div class="section-title">🛒 Outside Purchase</div>
+      <div class="section-sub">Log spare parts bought from external vendors</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="showPage('home')">← Back</button>
+  </div>
+
+  <div class="split">
+    <div class="card">
+      <div class="card-title">📝 Add Outside Purchase</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Vehicle</label>
+          <select id="opVehicle"></select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input id="opDate" type="date">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Part / Item Name</label>
+          <input id="opPartName" type="text" placeholder="e.g. Brake Drum, Clutch Plate">
+        </div>
+        <div class="form-group">
+          <label>Qty</label>
+          <input id="opQty" type="number" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>Unit Price (₹)</label>
+          <input id="opPrice" type="number" value="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Vendor Name</label>
+          <input id="opVendor" type="text" placeholder="Vendor / Shop name">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Notes</label>
+          <input id="opNotes" type="text" placeholder="Invoice no., remarks...">
+        </div>
+      </div>
+      <button class="btn btn-amber" style="margin-top:16px;" onclick="recordOutsidePurchase()">💳 Record Purchase</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Purchase History</div>
+      <div id="opHistContainer" style="max-height:520px; overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTSIDE REPAIR PAGE -->
+<div class="page" id="page-outside-repair">
+  <div class="section-head">
+    <div>
+      <div class="section-title">🔧 Outside Repair</div>
+      <div class="section-sub">Track vehicles sent to external workshops</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="showPage('home')">← Back</button>
+  </div>
+
+  <div class="split">
+    <div class="card">
+      <div class="card-title">📝 Log Outside Repair</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Vehicle</label>
+          <select id="orVehicle"></select>
+        </div>
+        <div class="form-group">
+          <label>Date Sent</label>
+          <input id="orDateSent" type="date">
+        </div>
+        <div class="form-group">
+          <label>Date Returned</label>
+          <input id="orDateReturn" type="date" placeholder="Leave blank if still out">
+        </div>
+        <div class="form-group">
+          <label>Workshop / Garage</label>
+          <input id="orWorkshop" type="text" placeholder="Workshop name">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Repair Description</label>
+          <input id="orDesc" type="text" placeholder="e.g. Engine overhaul, Gearbox repair">
+        </div>
+        <div class="form-group">
+          <label>Labour Cost (₹)</label>
+          <input id="orLabour" type="number" value="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Parts Cost (₹)</label>
+          <input id="orParts" type="number" value="0" step="0.01">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Notes</label>
+          <input id="orNotes" type="text" placeholder="Invoice, remarks...">
+        </div>
+      </div>
+      <button class="btn btn-danger" style="margin-top:16px;" onclick="recordOutsideRepair()">🔧 Log Repair</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Repair History</div>
+      <div id="orHistContainer" style="max-height:520px; overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPENSES PAGE -->
+<div class="page" id="page-expenses">
+  <div class="section-head">
+    <div>
+      <div class="section-title">📊 Total Expense Dashboard</div>
+      <div class="section-sub">Vehicle-wise breakdown · all expense types</div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button class="btn btn-outline btn-sm" onclick="showPage('home')">← Back</button>
+      <button class="btn btn-primary btn-sm" onclick="downloadExpenseReport()">⬇️ Export TXT</button>
+    </div>
+  </div>
+
+  <div class="stats-row" id="expStats"></div>
+
+  <!-- Filter row -->
+  <div class="card" style="padding:16px 20px;">
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <span style="font-weight:600; font-size:0.88rem;">Filter:</span>
+      <select id="expFilterVehicle" onchange="renderExpenses()" style="padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); font-family:'DM Sans'; font-size:0.88rem;">
+        <option value="">All Vehicles</option>
+      </select>
+      <select id="expFilterMonth" onchange="renderExpenses()" style="padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); font-family:'DM Sans'; font-size:0.88rem;">
+        <option value="">All Time</option>
+      </select>
+      <select id="expFilterType" onchange="renderExpenses()" style="padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); font-family:'DM Sans'; font-size:0.88rem;">
+        <option value="">All Types</option>
+        <option value="sgx">SGX Spares</option>
+        <option value="outside-purchase">Outside Purchase</option>
+        <option value="outside-repair">Outside Repair</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💰 Vehicle-wise Expense Summary</div>
+    <div id="expenseTable"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 All Transactions</div>
+    <div id="expTransactions" style="max-height:500px; overflow-y:auto;"></div>
+  </div>
+</div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
 <script>
-(function() {
-    // ========== FRESH PARTS LIST (exactly as requested) ==========
-    let parts = [
-        { id: 'p1', code: 'TIP-FIL-001', name: 'SDLG Hydrulic Oil', stock: 95, unit: ' L ,12-bucket', vendor: '', lastPrice: 450, lastPurchaseDate: '2025-02-10' },
-        { id: 'p2', code: 'TIP-OIL-015', name: 'SDLG Gear Oil', stock: 63, unit: 'L ,3-bucket', vendor: '', lastPrice: 360, lastPurchaseDate: '2025-03-01' },
-        { id: 'p3', code: 'TIP-BEL-003', name: 'SDLG Engine Oil', stock: 123, unit: 'L,5-bucket', vendor: '', lastPrice: 890, lastPurchaseDate: '2025-01-18' },
-        { id: 'p4', code: 'TIP-AIR-022', name: 'U- Clamp', stock: 3, unit: 'pcs', vendor: '', lastPrice: 700, lastPurchaseDate: '2025-02-22' },
-        { id: 'p5', code: 'TIP-BRK-101', name: 'Air filter', stock: 2, unit: 'pcs', vendor: '', lastPrice: 950, lastPurchaseDate: '2025-03-10' },
-        { id: 'p6', code: 'TIP-CLP-001', name: 'Loader Pins', stock: 14, unit: 'pcs', vendor: '', lastPrice: 4500, lastPurchaseDate: '2025-02-05' },
-        { id: 'p7', code: 'TIP-HYD-880', name: 'Air drum', stock: 2, unit: 'drum', vendor: '', lastPrice: 1000, lastPurchaseDate: '2025-03-14' },
-        { id: 'p8', code: 'TIP-ALT-07', name: 'Coolent', stock: 2, unit: 'pcs', vendor: '', lastPrice: 1000, lastPurchaseDate: '2024-12-01' },
-        { id: 'p9', code: 'TIP-UBO-55', name: 'U-bolt set', stock: 3, unit: 'set', vendor: '', lastPrice: 230, lastPurchaseDate: '2025-02-28' },
-        { id: 'p10', code: 'TIP-LMP-112', name: 'Headlight bulb H4', stock: 7, unit: 'pcs', vendor: '', lastPrice: 1275, lastPurchaseDate: '2025-03-20' },
-        { id: 'p11', code: 'TIP-TUB-020', name: 'Tyre', stock: 4, unit: 'pcs', vendor: '', lastPrice: 19533, lastPurchaseDate: '2025-01-12' },
-        { id: 'p12', code: 'TIP-GRS-01', name: 'Grease 5kg bucket', stock: 3, unit: 'bucket', vendor: '', lastPrice: 800, lastPurchaseDate: '2025-03-05' }
-    ];
+// ====== DATA ======
+const VEHICLES = [
+  { reg: 'AP39UQ0095', label: 'Tipper 95', type: 'tipper' },
+  { reg: 'AP39UQ0097', label: 'Tipper 97', type: 'tipper' },
+  { reg: 'AP39UW9880', label: 'Tipper 80', type: 'tipper' },
+  { reg: 'AP39UW9881', label: 'Tipper 81', type: 'tipper' },
+  { reg: 'AP39UY4651', label: 'Tipper 51', type: 'tipper' },
+  { reg: 'AP39UY4652', label: 'Tipper 52', type: 'tipper' },
+  { reg: 'AP39WC0926', label: 'Tipper 26', type: 'tipper' },
+  { reg: 'AP39WC0927', label: 'Tipper 27', type: 'tipper' },
+  { reg: 'AP39WC0928', label: 'Tipper 28', type: 'tipper' },
+  { reg: 'AP39WF2052', label: 'Tipper 52B', type: 'tipper' },
+  { reg: 'AP39WF2057', label: 'Tipper 57', type: 'tipper' },
+  { reg: 'AP39WF2058', label: 'Tipper 58', type: 'tipper' },
+  { reg: 'AP39NR1987', label: 'Loader 1', type: 'loader' },
+  { reg: 'AP39NR1723', label: 'Loader 2', type: 'loader' },
+  { reg: 'SL 253718',  label: 'Excavator 1', type: 'excavator' },
+  { reg: 'SL 254360',  label: 'Excavator 2', type: 'excavator' },
+];
 
-    // usageHistory starts empty (fresh)
-    let usageHistory = [];
+let parts = loadFromStorage('sgx_parts', [
+  { id:'p1', name:'SDLG Hydraulic Oil', stock:95, unit:'L', lastPrice:450, lastPurchaseDate:'2025-02-10' },
+  { id:'p2', name:'SDLG Gear Oil', stock:63, unit:'L', lastPrice:600, lastPurchaseDate:'2025-03-01' },
+  { id:'p3', name:'SDLG Engine Oil', stock:123, unit:'L', lastPrice:890, lastPurchaseDate:'2025-01-18' },
+  { id:'p4', name:'U-Clamp', stock:3, unit:'pcs', lastPrice:700, lastPurchaseDate:'2025-02-22' },
+  { id:'p5', name:'Air Filter', stock:2, unit:'pcs', lastPrice:950, lastPurchaseDate:'2025-03-10' },
+  { id:'p6', name:'Loader Pins', stock:14, unit:'pcs', lastPrice:4500, lastPurchaseDate:'2025-02-05' },
+  { id:'p7', name:'Air Drum', stock:2, unit:'drum', lastPrice:1000, lastPurchaseDate:'2025-03-14' },
+  { id:'p8', name:'Coolant', stock:2, unit:'pcs', lastPrice:1000, lastPurchaseDate:'2024-12-01' },
+  { id:'p9', name:'U-Bolt Set', stock:3, unit:'set', lastPrice:230, lastPurchaseDate:'2025-02-28' },
+  { id:'p10', name:'Headlight Bulb H4', stock:7, unit:'pcs', lastPrice:1275, lastPurchaseDate:'2025-03-20' },
+  { id:'p11', name:'Tyre', stock:4, unit:'pcs', lastPrice:19533, lastPurchaseDate:'2025-01-12' },
+  { id:'p12', name:'Grease 5kg Bucket', stock:3, unit:'bucket', lastPrice:800, lastPurchaseDate:'2025-03-05' },
+]);
 
-    // ===== NO localStorage loading – we start from scratch, but we will save later =====
-    function saveToStorage() {
-        localStorage.setItem('tipper_parts_inr_v2', JSON.stringify(parts));
-        localStorage.setItem('tipper_history_inr_v2', JSON.stringify(usageHistory));
-    }
+let sgxHistory = loadFromStorage('sgx_history', []);
+let outsidePurchases = loadFromStorage('sgx_op', []);
+let outsideRepairs = loadFromStorage('sgx_or', []);
 
-    // optionally clear any previous storage (to be safe)
-    localStorage.removeItem('tipper_parts_inr_v2');
-    localStorage.removeItem('tipper_history_inr_v2');
+function loadFromStorage(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function save() {
+  localStorage.setItem('sgx_parts', JSON.stringify(parts));
+  localStorage.setItem('sgx_history', JSON.stringify(sgxHistory));
+  localStorage.setItem('sgx_op', JSON.stringify(outsidePurchases));
+  localStorage.setItem('sgx_or', JSON.stringify(outsideRepairs));
+}
 
-    function formatDateDDMMYYYY(dateStr) {
-        if (!dateStr) return '—';
-        try {
-            let d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            let day = String(d.getDate()).padStart(2,'0');
-            let month = String(d.getMonth()+1).padStart(2,'0');
-            let year = d.getFullYear();
-            return `${day}-${month}-${year}`;
-        } catch { return dateStr; }
-    }
+// ====== HELPERS ======
+function fmtDate(d) {
+  if (!d) return '—';
+  try { const x=new Date(d); return `${String(x.getDate()).padStart(2,'0')}-${String(x.getMonth()+1).padStart(2,'0')}-${x.getFullYear()}`; } catch { return d; }
+}
+function fmtMoney(n) { return '₹' + Number(n||0).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2}); }
+function toast(msg, type='ok') {
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background = type==='err' ? 'var(--red)' : type==='warn' ? 'var(--amber)' : 'var(--accent)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+function today() { return new Date().toISOString().slice(0,10); }
+function genId() { return 'e'+Date.now()+Math.floor(Math.random()*1000); }
 
-    function renderPartMaster() {
-        const tbody = document.getElementById('partMasterBody');
-        let html = '';
-        parts.forEach(p => {
-            const lowClass = p.stock <= 2 ? 'low-stock' : '';
-            html += `<tr>
-                <td><strong>${p.name}</strong></td>
-                <td class="${lowClass}" style="font-weight:600;">${p.stock} ${p.unit}</td>
-                <td>₹${p.lastPrice?.toFixed(2) || '0.00'}</td>
-                <td>${p.lastPurchaseDate ? formatDateDDMMYYYY(p.lastPurchaseDate) : '—'}</td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-    }
+function vehicleByReg(reg) { return VEHICLES.find(v=>v.reg===reg)||{label:reg,reg,type:'other'}; }
+function vehicleLabel(reg) { const v=vehicleByReg(reg); return v.label; }
 
-    function renderDropdown() {
-        const select = document.getElementById('partSelectDropdown');
-        let options = '';
-        parts.forEach(p => {
-            options += `<option value="${p.id}" data-stock="${p.stock}" data-unit="${p.unit}" data-price="${p.lastPrice}">${p.name} (${p.stock} ${p.unit})</option>`;
-        });
-        select.innerHTML = options;
-        if (parts.length) { select.selectedIndex = 0; updateSelectedHint(); }
-    }
+// ====== POPULATE VEHICLE SELECTS ======
+function populateVehicleSelects() {
+  const ids = ['invVehicle','opVehicle','orVehicle'];
+  const opts = VEHICLES.map(v=>`<option value="${v.reg}">${v.label} · ${v.reg}</option>`).join('');
+  ids.forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=opts; });
 
-    function updateSelectedHint() {
-        const select = document.getElementById('partSelectDropdown');
-        const opt = select.options[select.selectedIndex];
-        const hint = document.getElementById('selectedPartHint');
-        if (opt) {
-            const stock = opt.getAttribute('data-stock');
-            const unit = opt.getAttribute('data-unit');
-            hint.innerText = `📦 current stock: ${stock} ${unit}`;
-        } else hint.innerText = '-- no part';
-    }
+  // expense filter
+  const ef = document.getElementById('expFilterVehicle');
+  ef.innerHTML = '<option value="">All Vehicles</option>' + VEHICLES.map(v=>`<option value="${v.reg}">${v.label}</option>`).join('');
+}
 
-    function renderHistory() {
-        const container = document.getElementById('historyContainer');
-        if (!usageHistory.length) {
-            container.innerHTML = '<div style="background:#f2f6fa; padding:20px; border-radius:28px; color:#556b82;">📭 No usage recorded yet.</div>';
-            return;
-        }
-        const reversed = [...usageHistory].reverse().slice(0, 20);
-        let html = '';
-        reversed.forEach(e => {
-            const usageValue = (e.priceAtUse && e.quantity) ? (e.priceAtUse * e.quantity) : 0;
-            const displayDate = e.date ? formatDateDDMMYYYY(e.date) : '—';
-            html += `<div class="history-item">
-                <div style="display:flex; justify-content:space-between;"><span><strong>${e.partName}</strong></span><span class="history-date">📅 ${displayDate}</span></div>
-                <div style="margin-top:8px; display:flex; gap:20px; flex-wrap:wrap;">
-                    <span>🚛 ${e.vehicle}</span><span>🔢 qty: <strong>${e.quantity}</strong></span><span>📉 after: <strong>${e.stockAfter} ${e.unit}</strong></span>
+// ====== PAGES ======
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const el = document.getElementById('page-'+id);
+  if(el) el.classList.add('active');
+  const tab = document.querySelector(`.nav-tab[onclick="showPage('${id}')"]`);
+  if(tab) tab.classList.add('active');
+  if(id==='inventory') { renderInventory(); renderSGXHistory(); }
+  if(id==='outside-purchase') { renderOPHistory(); }
+  if(id==='outside-repair') { renderORHistory(); }
+  if(id==='expenses') { renderExpenses(); }
+  if(id==='home') { renderHome(); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ====== HOME ======
+function renderHome() {
+  const totalSGX = sgxHistory.reduce((s,e)=>(s+(e.priceAtUse||0)*e.quantity),0);
+  const totalOP = outsidePurchases.reduce((s,e)=>(s+(e.unitPrice||0)*e.qty),0);
+  const totalOR = outsideRepairs.reduce((s,e)=>(s+(Number(e.labour)||0)+(Number(e.partsCC)||0)),0);
+  const totalAll = totalSGX+totalOP+totalOR;
+
+  document.getElementById('homeStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Vehicles</div><div class="stat-num">16</div><div class="stat-sub">12 tippers · 2 loaders · 2 excv</div></div>
+    <div class="stat-card"><div class="stat-label">Total Expense</div><div class="stat-num" style="font-size:1.4rem;">${fmtMoney(totalAll)}</div><div class="stat-sub">all time</div></div>
+    <div class="stat-card"><div class="stat-label">SGX Parts Used</div><div class="stat-num" style="font-size:1.4rem;">${fmtMoney(totalSGX)}</div><div class="stat-sub">${sgxHistory.length} entries</div></div>
+    <div class="stat-card"><div class="stat-label">Outside Purchase</div><div class="stat-num" style="font-size:1.4rem;">${fmtMoney(totalOP)}</div><div class="stat-sub">${outsidePurchases.length} bills</div></div>
+    <div class="stat-card"><div class="stat-label">Outside Repair</div><div class="stat-num" style="font-size:1.4rem;">${fmtMoney(totalOR)}</div><div class="stat-sub">${outsideRepairs.length} jobs</div></div>
+    <div class="stat-card"><div class="stat-label">Low Stock Parts</div><div class="stat-num" style="color:var(--red);">${parts.filter(p=>p.stock<=2).length}</div><div class="stat-sub">need reorder</div></div>
+  `;
+
+  const typeIcon = {tipper:'🚛', loader:'🏗️', excavator:'⛏️', other:'🚗'};
+  document.getElementById('vehicleQuickList').innerHTML = VEHICLES.map(v=>{
+    const vExp = getVehicleExpense(v.reg);
+    return `<div style="border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:white; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='var(--shadow)'" onmouseout="this.style.boxShadow=''">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <span style="font-size:1.4rem;">${typeIcon[v.type]||'🚗'}</span>
+        <div>
+          <div style="font-weight:700; font-size:0.92rem;">${v.label}</div>
+          <div class="plate plate-wh" style="margin-top:2px; font-size:0.7rem;">${v.reg}</div>
+        </div>
+      </div>
+      <div style="font-size:0.82rem; color:var(--text2);">Total: <strong style="color:var(--accent);">${fmtMoney(vExp.total)}</strong></div>
+    </div>`;
+  }).join('');
+}
+
+function getVehicleExpense(reg) {
+  const sgx = sgxHistory.filter(e=>e.vehicle===reg).reduce((s,e)=>s+(e.priceAtUse||0)*e.quantity,0);
+  const op = outsidePurchases.filter(e=>e.vehicle===reg).reduce((s,e)=>s+(e.unitPrice||0)*e.qty,0);
+  const or = outsideRepairs.filter(e=>e.vehicle===reg).reduce((s,e)=>s+Number(e.labour||0)+Number(e.partsCC||0),0);
+  return { sgx, op, or, total: sgx+op+or };
+}
+
+// ====== INVENTORY ======
+function renderInventory() {
+  const tbody = document.getElementById('invTableBody');
+  tbody.innerHTML = parts.map(p=>{
+    const status = p.stock<=0 ? '<span class="badge badge-red">Out of stock</span>' : p.stock<=2 ? '<span class="badge badge-amber">Low</span>' : '<span class="badge badge-green">OK</span>';
+    return `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td class="mono" style="font-weight:600;">${p.stock}</td>
+      <td>${p.unit}</td>
+      <td class="mono">${fmtMoney(p.lastPrice)}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+
+  const select = document.getElementById('invPartSelect');
+  select.innerHTML = parts.map(p=>`<option value="${p.id}">${p.name} (${p.stock} ${p.unit})</option>`).join('');
+  updateInvHint();
+
+  const low = parts.filter(p=>p.stock<=2).length;
+  document.getElementById('invStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Parts</div><div class="stat-num">${parts.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Low Stock</div><div class="stat-num" style="color:var(--red);">${low}</div><div class="stat-sub">≤2 units left</div></div>
+    <div class="stat-card"><div class="stat-label">Usage Entries</div><div class="stat-num">${sgxHistory.length}</div></div>
+    <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-num">${sgxHistory.filter(e=>e.date&&e.date.startsWith(today().slice(0,7))).length}</div><div class="stat-sub">records</div></div>
+  `;
+}
+
+function updateInvHint() {
+  const sel = document.getElementById('invPartSelect');
+  const opt = sel.options[sel.selectedIndex];
+  const hint = document.getElementById('invStockHint');
+  if(opt) {
+    const p = parts.find(x=>x.id===opt.value);
+    if(p) hint.textContent = `📦 Stock: ${p.stock} ${p.unit} · ₹${p.lastPrice}/unit`;
+  }
+}
+
+function addPart() {
+  const name = document.getElementById('newPartName').value.trim();
+  if(!name) { toast('Enter part name','err'); return; }
+  const stock = parseInt(document.getElementById('newPartStock').value)||0;
+  const unit = document.getElementById('newPartUnit').value.trim()||'pcs';
+  const price = parseFloat(document.getElementById('newPartPrice').value)||0;
+  const date = document.getElementById('newPartDate').value||today();
+  parts.push({ id:genId(), name, stock, unit, lastPrice:price, lastPurchaseDate:date });
+  save(); renderInventory();
+  document.getElementById('newPartName').value='';
+  document.getElementById('newPartUnit').value='';
+  document.getElementById('newPartPrice').value='0';
+  document.getElementById('newPartStock').value='1';
+  toast('✅ Part added');
+}
+
+function recordSGXUsage() {
+  const sel = document.getElementById('invPartSelect');
+  const partId = sel.value;
+  const part = parts.find(p=>p.id===partId);
+  if(!part) { toast('Select a part','err'); return; }
+  const qty = parseInt(document.getElementById('invQty').value)||1;
+  if(part.stock < qty) { toast(`Only ${part.stock} ${part.unit} left`,'err'); return; }
+  const vehicle = document.getElementById('invVehicle').value;
+  const date = document.getElementById('invDate').value;
+  if(!date) { toast('Select date','err'); return; }
+  const notes = document.getElementById('invNotes').value.trim();
+
+  part.stock -= qty;
+  sgxHistory.push({
+    id:genId(), type:'sgx', partId:part.id, partName:part.name,
+    vehicle, date, quantity:qty, unit:part.unit,
+    priceAtUse:part.lastPrice, notes
+  });
+  save(); renderInventory(); renderSGXHistory(); renderHome();
+  toast(`✅ Recorded: ${part.name} × ${qty}`);
+}
+
+function renderSGXHistory() {
+  const c = document.getElementById('sgxHistContainer');
+  const items = [...sgxHistory].reverse().slice(0,30);
+  if(!items.length) { c.innerHTML='<div class="empty-state"><span class="empty-icon">📭</span>No usage recorded yet</div>'; return; }
+  c.innerHTML = items.map(e=>`
+    <div class="hist-item">
+      <div class="hist-item-dot dot-sgx"></div>
+      <div style="flex:1;">
+        <div style="font-weight:600; font-size:0.9rem;">${e.partName}</div>
+        <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleLabel(e.vehicle)} · ${fmtDate(e.date)} · qty: ${e.quantity} ${e.unit}</div>
+        ${e.notes?`<div style="font-size:0.78rem;color:var(--text3);">${e.notes}</div>`:''}
+      </div>
+      <div style="font-weight:700; color:var(--accent); font-size:0.88rem;">${fmtMoney((e.priceAtUse||0)*e.quantity)}</div>
+    </div>`).join('');
+}
+
+// ====== OUTSIDE PURCHASE ======
+function recordOutsidePurchase() {
+  const vehicle = document.getElementById('opVehicle').value;
+  const date = document.getElementById('opDate').value;
+  if(!date) { toast('Select date','err'); return; }
+  const partName = document.getElementById('opPartName').value.trim();
+  if(!partName) { toast('Enter part name','err'); return; }
+  const qty = parseInt(document.getElementById('opQty').value)||1;
+  const unitPrice = parseFloat(document.getElementById('opPrice').value)||0;
+  const vendor = document.getElementById('opVendor').value.trim();
+  const notes = document.getElementById('opNotes').value.trim();
+  outsidePurchases.push({ id:genId(), type:'outside-purchase', vehicle, date, partName, qty, unitPrice, vendor, notes });
+  save(); renderOPHistory(); renderHome();
+  ['opPartName','opVendor','opNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('opQty').value='1';
+  document.getElementById('opPrice').value='0';
+  toast(`✅ Purchase logged: ${partName}`);
+}
+
+function renderOPHistory() {
+  const c = document.getElementById('opHistContainer');
+  const items = [...outsidePurchases].reverse();
+  if(!items.length) { c.innerHTML='<div class="empty-state"><span class="empty-icon">📭</span>No purchases logged yet</div>'; return; }
+  c.innerHTML = items.map(e=>`
+    <div class="hist-item">
+      <div class="hist-item-dot dot-outside"></div>
+      <div style="flex:1;">
+        <div style="font-weight:600; font-size:0.9rem;">${e.partName}</div>
+        <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleLabel(e.vehicle)} · ${fmtDate(e.date)} · ${e.vendor||'—'}</div>
+        <div style="font-size:0.78rem; color:var(--text3);">qty ${e.qty} × ${fmtMoney(e.unitPrice)}${e.notes?' · '+e.notes:''}</div>
+      </div>
+      <div style="font-weight:700; color:var(--amber); font-size:0.88rem;">${fmtMoney((e.unitPrice||0)*e.qty)}</div>
+    </div>`).join('');
+}
+
+// ====== OUTSIDE REPAIR ======
+function recordOutsideRepair() {
+  const vehicle = document.getElementById('orVehicle').value;
+  const dateSent = document.getElementById('orDateSent').value;
+  if(!dateSent) { toast('Select date sent','err'); return; }
+  const desc = document.getElementById('orDesc').value.trim();
+  if(!desc) { toast('Enter repair description','err'); return; }
+  const workshop = document.getElementById('orWorkshop').value.trim();
+  const dateReturn = document.getElementById('orDateReturn').value;
+  const labour = parseFloat(document.getElementById('orLabour').value)||0;
+  const partsCC = parseFloat(document.getElementById('orParts').value)||0;
+  const notes = document.getElementById('orNotes').value.trim();
+  outsideRepairs.push({ id:genId(), type:'outside-repair', vehicle, dateSent, dateReturn, desc, workshop, labour, partsCC, notes });
+  save(); renderORHistory(); renderHome();
+  ['orDesc','orWorkshop','orNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('orLabour').value='0';
+  document.getElementById('orParts').value='0';
+  document.getElementById('orDateReturn').value='';
+  toast(`✅ Repair logged: ${desc}`);
+}
+
+function renderORHistory() {
+  const c = document.getElementById('orHistContainer');
+  const items = [...outsideRepairs].reverse();
+  if(!items.length) { c.innerHTML='<div class="empty-state"><span class="empty-icon">📭</span>No repairs logged yet</div>'; return; }
+  c.innerHTML = items.map(e=>{
+    const total = Number(e.labour||0)+Number(e.partsCC||0);
+    const returned = e.dateReturn ? `<span class="badge badge-green">Returned ${fmtDate(e.dateReturn)}</span>` : '<span class="badge badge-amber">Still out</span>';
+    return `<div class="hist-item">
+      <div class="hist-item-dot dot-repair"></div>
+      <div style="flex:1;">
+        <div style="font-weight:600; font-size:0.9rem;">${e.desc}</div>
+        <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleLabel(e.vehicle)} · Sent: ${fmtDate(e.dateSent)} · ${e.workshop||'—'}</div>
+        <div style="margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">${returned}<span style="font-size:0.78rem;color:var(--text3);">Labour: ${fmtMoney(e.labour)} · Parts: ${fmtMoney(e.partsCC)}</span>${e.notes?`<span style="font-size:0.78rem;color:var(--text3);">${e.notes}</span>`:''}</div>
+      </div>
+      <div style="font-weight:700; color:var(--red); font-size:0.88rem;">${fmtMoney(total)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ====== EXPENSES ======
+function renderExpenses() {
+  const filterVehicle = document.getElementById('expFilterVehicle').value;
+  const filterMonth = document.getElementById('expFilterMonth').value;
+  const filterType = document.getElementById('expFilterType').value;
+
+  // Populate months
+  const allDates = [
+    ...sgxHistory.map(e=>e.date),
+    ...outsidePurchases.map(e=>e.date),
+    ...outsideRepairs.map(e=>e.dateSent)
+  ].filter(Boolean);
+  const months = [...new Set(allDates.map(d=>d.slice(0,7)))].sort().reverse();
+  const mSelect = document.getElementById('expFilterMonth');
+  const curMonth = mSelect.value;
+  mSelect.innerHTML = '<option value="">All Time</option>' + months.map(m=>`<option value="${m}" ${m===curMonth?'selected':''}>${m}</option>`).join('');
+
+  function matchFilter(vehicle, date) {
+    if(filterVehicle && vehicle!==filterVehicle) return false;
+    if(filterMonth && date && !date.startsWith(filterMonth)) return false;
+    return true;
+  }
+
+  // Build per-vehicle totals
+  const vData = {};
+  VEHICLES.forEach(v=>{ vData[v.reg]={label:v.label, type:v.type, sgx:0, op:0, or:0}; });
+
+  sgxHistory.filter(e=>(!filterType||filterType==='sgx')&&matchFilter(e.vehicle,e.date)).forEach(e=>{
+    if(vData[e.vehicle]) vData[e.vehicle].sgx += (e.priceAtUse||0)*e.quantity;
+  });
+  outsidePurchases.filter(e=>(!filterType||filterType==='outside-purchase')&&matchFilter(e.vehicle,e.date)).forEach(e=>{
+    if(vData[e.vehicle]) vData[e.vehicle].op += (e.unitPrice||0)*e.qty;
+  });
+  outsideRepairs.filter(e=>(!filterType||filterType==='outside-repair')&&matchFilter(e.vehicle,e.dateSent)).forEach(e=>{
+    if(vData[e.vehicle]) vData[e.vehicle].or += Number(e.labour||0)+Number(e.partsCC||0);
+  });
+
+  const rows = Object.entries(vData).map(([reg,d])=>({reg,...d,total:d.sgx+d.op+d.or}));
+  const maxTotal = Math.max(...rows.map(r=>r.total),1);
+  const grandSGX = rows.reduce((s,r)=>s+r.sgx,0);
+  const grandOP = rows.reduce((s,r)=>s+r.op,0);
+  const grandOR = rows.reduce((s,r)=>s+r.or,0);
+  const grand = grandSGX+grandOP+grandOR;
+
+  const typeIcon = {tipper:'🚛',loader:'🏗️',excavator:'⛏️',other:'🚗'};
+
+  const tableHTML = `
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr>
+        <th>Vehicle</th>
+        <th>SGX Spares</th>
+        <th>Outside Purchase</th>
+        <th>Outside Repair</th>
+        <th>Total</th>
+        <th style="min-width:120px;">Share</th>
+      </tr></thead>
+      <tbody>
+        ${rows.filter(r=>!filterVehicle||r.reg===filterVehicle).sort((a,b)=>b.total-a.total).map(r=>`
+          <tr>
+            <td>
+              <div style="font-weight:600; font-size:0.88rem;">${typeIcon[r.type]||'🚗'} ${r.label}</div>
+              <div class="plate plate-wh" style="margin-top:3px; font-size:0.68rem;">${r.reg}</div>
+            </td>
+            <td class="mono" style="color:var(--accent2);">${r.sgx>0?fmtMoney(r.sgx):'—'}</td>
+            <td class="mono" style="color:var(--amber);">${r.op>0?fmtMoney(r.op):'—'}</td>
+            <td class="mono" style="color:var(--red);">${r.or>0?fmtMoney(r.or):'—'}</td>
+            <td class="mono" style="font-weight:700;">${r.total>0?fmtMoney(r.total):'—'}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="prog-bar">
+                  <div class="prog-fill" style="width:${(r.total/maxTotal*100).toFixed(1)}%; background:var(--accent2);"></div>
                 </div>
-                <div style="font-size:0.9rem; background:#eaf1d9; padding:2px 12px; border-radius:30px; display:inline-block;">💰 usage value: ₹${usageValue.toFixed(2)}</div>
-            </div>`;
-        });
-        container.innerHTML = html;
-    }
+                <span style="font-size:0.78rem; color:var(--text3); width:38px; text-align:right;">${grand>0?(r.total/grand*100).toFixed(1)+'%':'—'}</span>
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr style="background:var(--surface2); font-weight:700;">
+          <td>TOTAL</td>
+          <td class="mono" style="color:var(--accent2);">${fmtMoney(grandSGX)}</td>
+          <td class="mono" style="color:var(--amber);">${fmtMoney(grandOP)}</td>
+          <td class="mono" style="color:var(--red);">${fmtMoney(grandOR)}</td>
+          <td class="mono" style="font-size:1.05rem;">${fmtMoney(grand)}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+    </div>`;
+  document.getElementById('expenseTable').innerHTML = tableHTML;
 
-    function updateStats() {
-        document.getElementById('totalParts').innerText = parts.length;
-        document.getElementById('lowStockCount').innerText = parts.filter(p => p.stock <= 2).length;
-        const now = new Date(); const month = now.getMonth(); const year = now.getFullYear();
-        let monthCount = 0;
-        usageHistory.forEach(e => { if (e.date) { try { let d = new Date(e.date); if (d.getMonth()===month && d.getFullYear()===year) monthCount++; }catch{}} });
-        document.getElementById('monthlyUsage').innerText = monthCount;
-    }
+  // Stats
+  document.getElementById('expStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Grand Total</div><div class="stat-num" style="font-size:1.4rem;">${fmtMoney(grand)}</div></div>
+    <div class="stat-card"><div class="stat-label">SGX Spares</div><div class="stat-num" style="font-size:1.3rem; color:var(--accent2);">${fmtMoney(grandSGX)}</div></div>
+    <div class="stat-card"><div class="stat-label">Outside Purchase</div><div class="stat-num" style="font-size:1.3rem; color:var(--amber);">${fmtMoney(grandOP)}</div></div>
+    <div class="stat-card"><div class="stat-label">Outside Repair</div><div class="stat-num" style="font-size:1.3rem; color:var(--red);">${fmtMoney(grandOR)}</div></div>
+  `;
 
-    // ========== SIMPLIFIED REPORT GENERATION =========
-    function generateReport() {
-        const container = document.getElementById('reportContent');
-        const tipperSummaryDiv = document.getElementById('tipperWiseSummary');
-        if (!usageHistory.length) {
-            container.innerHTML = '<span style="padding:20px; display:block;">📭 No entries yet.</span>';
-            tipperSummaryDiv.innerHTML = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY </span><span style="display:block; padding:10px;">📭 No data</span>';
-            return;
-        }
+  // All transactions
+  const allTx = [
+    ...sgxHistory.map(e=>({...e, _type:'SGX', _date:e.date, _vehicle:e.vehicle, _amt:(e.priceAtUse||0)*e.quantity, _desc:`${e.partName} ×${e.quantity}`})),
+    ...outsidePurchases.map(e=>({...e, _type:'OUTSIDE', _date:e.date, _vehicle:e.vehicle, _amt:(e.unitPrice||0)*e.qty, _desc:`${e.partName} ×${e.qty} (${e.vendor||'—'})`})),
+    ...outsideRepairs.map(e=>({...e, _type:'REPAIR', _date:e.dateSent, _vehicle:e.vehicle, _amt:Number(e.labour||0)+Number(e.partsCC||0), _desc:`${e.desc} @ ${e.workshop||'—'}`})),
+  ]
+  .filter(e=>(!filterVehicle||e._vehicle===filterVehicle)&&(!filterMonth||e._date&&e._date.startsWith(filterMonth)))
+  .filter(e=>!filterType||e.type===filterType)
+  .sort((a,b)=>new Date(b._date||0)-new Date(a._date||0));
 
-        const today = new Date();
-        const sevenAgo = new Date(today); sevenAgo.setDate(today.getDate()-7);
-        let recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const typeColors = {'SGX':'badge-blue','OUTSIDE':'badge-amber','REPAIR':'badge-red'};
+  const txC = document.getElementById('expTransactions');
+  if(!allTx.length) { txC.innerHTML='<div class="empty-state"><span class="empty-icon">📭</span>No transactions found</div>'; return; }
+  txC.innerHTML = allTx.map(e=>`
+    <div class="hist-item">
+      <div class="hist-item-dot" style="background:${e._type==='SGX'?'var(--accent2)':e._type==='OUTSIDE'?'var(--amber)':'var(--red)'};"></div>
+      <div style="flex:1;">
+        <div style="font-weight:600; font-size:0.88rem;">${e._desc}</div>
+        <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleLabel(e._vehicle)} · ${fmtDate(e._date)}</div>
+      </div>
+      <span class="badge ${typeColors[e._type]||'badge-gray'}" style="margin-right:8px;">${e._type}</span>
+      <div style="font-weight:700; font-size:0.88rem;">${fmtMoney(e._amt)}</div>
+    </div>`).join('');
+}
 
-        const dateGroups = {};
-        recent.forEach(e => {
-            const dStr = formatDateDDMMYYYY(e.date);
-            if (!dateGroups[dStr]) dateGroups[dStr] = [];
-            dateGroups[dStr].push(e);
-        });
+// ====== DOWNLOAD REPORT ======
+function downloadExpenseReport() {
+  const d = new Date();
+  let out = `SGX FLEET MAINTENANCE EXPENSE REPORT\nGenerated: ${d.toLocaleString('en-IN')}\n\n`;
+  out += '='.repeat(60)+'\n';
+  VEHICLES.forEach(v=>{
+    const e = getVehicleExpense(v.reg);
+    if(e.total===0) return;
+    out += `\n${v.label} (${v.reg})\n`;
+    out += `  SGX Spares:        ₹${e.sgx.toFixed(2)}\n`;
+    out += `  Outside Purchase:  ₹${e.op.toFixed(2)}\n`;
+    out += `  Outside Repair:    ₹${e.or.toFixed(2)}\n`;
+    out += `  TOTAL:             ₹${e.total.toFixed(2)}\n`;
+    out += '-'.repeat(40)+'\n';
+  });
+  const grand = VEHICLES.reduce((s,v)=>s+getVehicleExpense(v.reg).total,0);
+  out += `\nGRAND TOTAL: ₹${grand.toFixed(2)}\n`;
+  const blob = new Blob([out], {type:'text/plain'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download = `SGX_Fleet_Expense_${d.toISOString().slice(0,10)}.txt`;
+  a.click();
+}
 
-        const sortedDates = Object.keys(dateGroups).sort((a,b) => {
-            let [da, ma, ya] = a.split('-');
-            let [db, mb, yb] = b.split('-');
-            return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
-        });
+// ====== SPLASH ======
+function runSplash() {
+  const plates = VEHICLES.map(v=>v.reg);
+  const pc = document.getElementById('splashPlates');
+  plates.forEach((p,i)=>{
+    setTimeout(()=>{
+      const s = document.createElement('span'); s.textContent=p;
+      s.style.animationDelay=i*0.06+'s'; pc.appendChild(s);
+    }, i*80);
+  });
 
-        let htmlContent = '';
-        for (let d of sortedDates) {
-            const entries = dateGroups[d];
-            htmlContent += `<div class="report-date-head">📆 ${d} (${entries.length} usage)</div>`;
-            let dayTotal = 0;
-            entries.forEach(e => {
-                const usageVal = (e.priceAtUse * e.quantity);
-                dayTotal += usageVal;
-                htmlContent += `<div class="report-entry">
-                    <strong>🚛 ${e.vehicle}</strong> 
-                    — 🔧 ${e.partName} ${e.unit === 'bucket' ? '🛢️' : ''}
-                    — qty <strong>${e.quantity}</strong> 
-                    — 💰 ₹${usageVal.toFixed(2)}
-                </div>`;
-            });
-            htmlContent += `<div class="date-total">📅 ${d} total: ₹${dayTotal.toFixed(2)}</div>`;
-        }
-        htmlContent += `<div class="report-total">📊 total recent: ${recent.length} entries</div>`;
-        container.innerHTML = htmlContent;
+  // Canvas particles
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;opacity:0.4;';
+  document.getElementById('splash').prepend(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const dots=Array.from({length:60},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,op:Math.random()}));
+  function animDots(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    dots.forEach(d=>{
+      d.x+=d.vx; d.y+=d.vy;
+      if(d.x<0||d.x>canvas.width) d.vx*=-1;
+      if(d.y<0||d.y>canvas.height) d.vy*=-1;
+      ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(96,165,250,${d.op})`; ctx.fill();
+    });
+    requestAnimationFrame(animDots);
+  }
+  animDots();
 
-        // simple tipper summary
-        const tipperSum = {};
-        recent.forEach(e => {
-            const v = e.vehicle;
-            if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0, oilLitres:0 };
-            tipperSum[v].count += e.quantity;
-            tipperSum[v].totalCost += (e.priceAtUse * e.quantity);
-            if (e.partName.toLowerCase().includes('hydrulic')) tipperSum[v].oilLitres += e.quantity;
-        });
+  setTimeout(()=>{
+    const sp = document.getElementById('splash');
+    sp.style.transition='opacity 0.8s ease, transform 0.8s ease';
+    sp.style.opacity='0'; sp.style.transform='scale(1.05)';
+    setTimeout(()=>{ sp.style.display='none'; renderHome(); },800);
+  }, 2800);
+}
 
-        let tipHtml = '<span class="tipper-title">🔎 TIPPER‑WISE SUMMARY (last 7 days)</span>';
-        Object.keys(tipperSum).sort().forEach(t => {
-            const oilNote = tipperSum[t].oilLitres ? ` | oil <strong>${tipperSum[t].oilLitres} L</strong>` : '';
-            tipHtml += `<div class="tipper-line">
-                🚛 <strong>${t}</strong> : 
-                🔧 parts used <strong>${tipperSum[t].count}</strong> 
-                | 💰 ₹${tipperSum[t].totalCost.toFixed(2)}${oilNote}
-            </div>`;
-        });
-        if (Object.keys(tipperSum).length === 0) tipHtml += '<div style="padding:10px;">⏳ No usage in last 7 days</div>';
-        tipperSummaryDiv.innerHTML = tipHtml;
-    }
+// ====== INIT ======
+window.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 
-    function downloadReport() {
-        const todayStr = new Date().toISOString().slice(0,10);
-        const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate()-7);
-        const recent = usageHistory.filter(e => e.date && new Date(e.date) >= sevenAgo).sort((a,b)=>new Date(a.date)-new Date(b.date));
-        const dateGroups = {};
-        recent.forEach(e => { const dStr = formatDateDDMMYYYY(e.date); if (!dateGroups[dStr]) dateGroups[dStr] = []; dateGroups[dStr].push(e); });
-        const sortedDates = Object.keys(dateGroups).sort((a,b) => {
-            let [da, ma, ya] = a.split('-'); let [db, mb, yb] = b.split('-');
-            return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
-        });
+  // Set today's date in all date fields
+  ['invDate','opDate','orDateSent'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=today(); });
+  document.getElementById('newPartDate').value=today();
 
-        let content = `FLEET USAGE REPORT (last 7 days)\n` + `generated: ${todayStr}\n\n`;
-        for (let d of sortedDates) {
-            const entries = dateGroups[d];
-            content += `📆 ${d} (${entries.length} usage)\n`;
-            let dayTotal=0;
-            entries.forEach(e => {
-                const usageVal = (e.priceAtUse * e.quantity);
-                dayTotal += usageVal;
-                content += `   🚛 ${e.vehicle}   🔧 ${e.partName}   qty:${e.quantity}   ₹${usageVal.toFixed(2)}\n`;
-            });
-            content += `   📅 day total: ₹${dayTotal.toFixed(2)}\n\n`;
-        }
-        content += `📊 total recent: ${recent.length}\n\n`;
-        const tipperSum = {};
-        recent.forEach(e => { 
-            const v = e.vehicle; 
-            if (!tipperSum[v]) tipperSum[v] = { count:0, totalCost:0, oilLitres:0 }; 
-            tipperSum[v].count += e.quantity; 
-            tipperSum[v].totalCost += (e.priceAtUse * e.quantity); 
-            if (e.partName.toLowerCase().includes('hydrulic')) tipperSum[v].oilLitres += e.quantity; 
-        });
-        Object.keys(tipperSum).sort().forEach(t => {
-            const oilNote = tipperSum[t].oilLitres ? ` | oil ${tipperSum[t].oilLitres} L` : '';
-            content += `${t} : parts used ${tipperSum[t].count} | ₹${tipperSum[t].totalCost.toFixed(2)}${oilNote}\n`;
-        });
+  populateVehicleSelects();
 
-        const blob = new Blob([content], {type:'text/plain'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `tipper_report_${todayStr}.txt`; a.click(); URL.revokeObjectURL(url);
-    }
+  document.getElementById('invPartSelect').addEventListener('change', updateInvHint);
 
-    function recordUsage() {
-        const select = document.getElementById('partSelectDropdown');
-        const selectedId = select.value; if (!selectedId) { alert('select part'); return; }
-        const part = parts.find(p => p.id === selectedId); if (!part) return;
-        let qty = parseInt(document.getElementById('usedQty').value, 10); if (isNaN(qty)||qty<1) qty=1;
-        if (part.stock < qty) { alert(`only ${part.stock} left`); return; }
-
-        const vehicleSelect = document.getElementById('vehicleSelect');
-        const vehicle = vehicleSelect.options[vehicleSelect.selectedIndex].value;
-        const date = document.getElementById('usageDate').value; if (!date) { alert('select date'); return; }
-
-        let perUnitPrice = part.lastPrice;
-        // --- special handling for oil pricing exactly as requested ---
-        // Hydraulic Oil (p1) bucket price ₹22450 remains same (per bucket) – usage value = ₹22450 * qty
-        if (part.id === 'p1') {
-            perUnitPrice = part.lastPrice;   // 22450 per bucket, no division – usage value shows full bucket price
-        }
-        // Gear Oil (p2) bucket price 36000 but we treat as per litre (600/L). For each usage quantity = litres.
-        if (part.id === 'p2' && part.unit === 'bucket') {
-            perUnitPrice = 36000 / 60; // 600 per litre
-        }
-
-        part.stock -= qty;
-        usageHistory.push({
-            partId:part.id, partName:part.name, vehicle, date, quantity:qty,
-            stockAfter:part.stock, unit:part.unit,
-            priceAtUse: perUnitPrice
-        });
-
-        saveToStorage();
-        renderPartMaster();
-        renderDropdown();
-        renderHistory();
-        updateStats();
-        updateSelectedHint();
-        generateReport();
-    }
-
-    function clearHistory() {
-        if (confirm('clear usage history?')) {
-            usageHistory = [];
-            saveToStorage();
-            renderHistory();
-            updateStats();
-            generateReport();
-        }
-    }
-
-    function setDefaultDate() {
-        document.getElementById('usageDate').value = new Date().toISOString().slice(0,10);
-    }
-
-    function addNewPart() {
-        const code = document.getElementById('newPartCode').value.trim(); if(!code){alert('enter code');return;}
-        const name = document.getElementById('newPartName').value.trim(); if(!name){alert('enter name');return;}
-        const stock = parseInt(document.getElementById('newPartStock').value,10) || 0;
-        const price = parseFloat(document.getElementById('newPartPrice').value)||0;
-        const date = document.getElementById('newPartDate').value;
-        if(!date) { alert('enter purchase date'); return; }
-
-        const newId = 'p' + Date.now() + Math.floor(Math.random()*1000);
-        parts.push({ id: newId, code, name, stock, unit: 'pcs', vendor: '', lastPrice: price, lastPurchaseDate: date });
-
-        saveToStorage();
-        renderPartMaster();
-        renderDropdown();
-        updateStats();
-        document.getElementById('newPartCode').value = 'TIP-NEW-';
-        document.getElementById('newPartName').value = '';
-        document.getElementById('newPartStock').value = '5';
-        document.getElementById('newPartPrice').value = '0';
-        document.getElementById('newPartDate').value = '2026-03-21';
-    }
-
-    window.onload = function() {
-        // ensure no leftover storage (already removed above)
-        renderPartMaster();
-        renderDropdown();
-        renderHistory();
-        updateStats();
-        updateSelectedHint();
-        generateReport();
-        setDefaultDate();
-
-        document.getElementById('partSelectDropdown').addEventListener('change', updateSelectedHint);
-        document.getElementById('recordUseBtn').addEventListener('click', recordUsage);
-        document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
-        document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
-        document.getElementById('addPartBtn').addEventListener('click', addNewPart);
-    };
-})();
+  runSplash();
+});
 </script>
 </body>
 </html>
