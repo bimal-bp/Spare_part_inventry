@@ -214,6 +214,9 @@ main { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
 .btn-outline:hover { background: var(--surface2); }
 .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
 .btn-danger { background: var(--red); color: white; border-color: var(--red); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-icon-del { background: none; border: 1.5px solid #fca5a5; color: var(--red); padding: 5px 9px; border-radius: 7px; font-size: 0.82rem; cursor: pointer; transition: all 0.18s; line-height: 1; }
+.btn-icon-del:hover { background: var(--red); color: white; border-color: var(--red); }
 .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 th { background: var(--surface2); padding: 12px 14px; text-align: left; font-size: 0.78rem; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
@@ -256,6 +259,20 @@ tr:hover td { background: #f9fafb; }
 .mono { font-family: 'JetBrains Mono', monospace; }
 @media (max-width: 768px) { header { padding: 0 16px; } .nav-tabs { display: none; } main { padding: 16px; } .big-btn-row { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .logo-text { display: none; } }
+
+/* ====== NEW: Unit pill / price hint ====== */
+.unit-pill { display:inline-block; background:#e0f2fe; color:#075985; padding:2px 8px; border-radius:20px; font-size:0.75rem; font-weight:700; font-family:'JetBrains Mono'; }
+.price-hint-box { background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--text2); display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.price-hint-box strong { color:var(--accent); }
+
+/* ====== Delete confirm modal ====== */
+#delModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9000; align-items:center; justify-content:center; }
+#delModal.open { display:flex; }
+.del-modal-box { background:white; border-radius:var(--radius); padding:32px; max-width:420px; width:90%; box-shadow:var(--shadow-lg); text-align:center; }
+.del-modal-icon { font-size:2.5rem; margin-bottom:10px; }
+.del-modal-title { font-weight:700; font-size:1.1rem; margin-bottom:6px; color:var(--text); }
+.del-modal-sub { font-size:0.88rem; color:var(--text2); margin-bottom:24px; }
+.del-modal-btns { display:flex; gap:10px; justify-content:center; }
 </style>
 </head>
 <body>
@@ -291,6 +308,19 @@ tr:hover td { background: #f9fafb; }
   </div>
 </div>
 
+<!-- ====== DELETE CONFIRM MODAL ====== -->
+<div id="delModal">
+  <div class="del-modal-box">
+    <div class="del-modal-icon">🗑️</div>
+    <div class="del-modal-title" id="delModalTitle">Delete Entry?</div>
+    <div class="del-modal-sub" id="delModalSub">This action cannot be undone.</div>
+    <div class="del-modal-btns">
+      <button class="btn btn-outline" onclick="closeDelModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== HEADER ====== -->
 <header>
   <div class="logo">
@@ -318,9 +348,7 @@ tr:hover td { background: #f9fafb; }
       <div class="section-sub">16 vehicles · 12 tippers · 2 loaders · 2 excavators</div>
     </div>
   </div>
-  <!-- MTD Stats -->
   <div class="stats-row" id="homeStats"></div>
-  <!-- Action Buttons -->
   <div class="big-btn-row">
     <div class="big-btn big-btn-blue" onclick="showPage('inventory')">
       <span class="big-btn-icon">🏭</span>
@@ -338,7 +366,6 @@ tr:hover td { background: #f9fafb; }
       <div class="big-btn-desc">Record vehicle sent to external workshop</div>
     </div>
   </div>
-  <!-- 2-Column Panels -->
   <div class="home-panels" id="homePanels"></div>
 </div>
 
@@ -354,17 +381,28 @@ tr:hover td { background: #f9fafb; }
       <div class="card-title">📦 Stock List</div>
       <div class="table-wrap" style="margin-bottom:20px;">
         <table id="invTable">
-          <thead><tr><th>Part Name</th><th>Stock</th><th>Unit</th><th>₹/unit</th><th>Status</th></tr></thead>
+          <thead><tr><th>Part Name</th><th>Stock</th><th>Unit</th><th>Rs./unit</th><th>Status</th><th>Action</th></tr></thead>
           <tbody id="invTableBody"></tbody>
         </table>
       </div>
       <div style="border-top:1px solid var(--border); padding-top:18px; margin-top:4px;">
         <div class="card-title" style="border:none; padding:0; margin-bottom:14px; font-size:0.88rem;">➕ Add New Part</div>
         <div class="form-grid">
-          <div class="form-group"><label>Part Name</label><input id="newPartName" type="text" placeholder="e.g. Brake Pad"></div>
-          <div class="form-group"><label>Stock Qty</label><input id="newPartStock" type="number" value="1" min="0"></div>
-          <div class="form-group"><label>Unit</label><input id="newPartUnit" type="text" placeholder="pcs / L / set"></div>
-          <div class="form-group"><label>Price/unit (₹)</label><input id="newPartPrice" type="number" value="0" step="0.01"></div>
+          <div class="form-group"><label>Part Name</label><input id="newPartName" type="text" placeholder="e.g. Engine Oil"></div>
+          <div class="form-group">
+            <label>Unit Type</label>
+            <select id="newPartUnit">
+              <option value="L">L (Litres)</option>
+              <option value="pcs" selected>pcs</option>
+              <option value="set">set</option>
+              <option value="drum">drum</option>
+              <option value="bucket">bucket</option>
+              <option value="kg">kg</option>
+              <option value="m">m (metres)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Stock Qty</label><input id="newPartStock" type="number" value="1" min="0" step="0.1"></div>
+          <div class="form-group"><label>Price / unit (Rs.)</label><input id="newPartPrice" type="number" value="0" step="0.01"></div>
           <div class="form-group"><label>Purchase Date</label><input id="newPartDate" type="date"></div>
         </div>
         <button class="btn btn-primary" style="margin-top:14px;" onclick="addPart()">➕ Add Part</button>
@@ -372,16 +410,17 @@ tr:hover td { background: #f9fafb; }
     </div>
     <div class="card">
       <div class="card-title">🔧 Record SGX Part Usage</div>
-      <div class="form-group" style="margin-bottom:14px;"><label>Select Part</label><select class="part-select-list" id="invPartSelect" size="6"></select></div>
+      <div class="form-group" style="margin-bottom:10px;"><label>Select Part</label><select class="part-select-list" id="invPartSelect" size="6"></select></div>
+      <div id="invPriceHintBox" class="price-hint-box" style="margin-bottom:14px;">Select a part above to see details</div>
       <div class="form-grid">
         <div class="form-group"><label>Vehicle</label><select id="invVehicle"></select></div>
         <div class="form-group"><label>Date</label><input id="invDate" type="date"></div>
-        <div class="form-group"><label>Qty Used</label><input id="invQty" type="number" value="1" min="1"></div>
+        <div class="form-group"><label id="invQtyLabel">Qty Used</label><input id="invQty" type="number" value="1" min="0.1" step="0.1"></div>
         <div class="form-group"><label>Notes</label><input id="invNotes" type="text" placeholder="optional"></div>
       </div>
       <div style="display:flex; align-items:center; gap:12px; margin-top:16px;">
         <button class="btn btn-primary" onclick="recordSGXUsage()">✅ Record Usage</button>
-        <span id="invStockHint" style="background:var(--surface2); padding:6px 14px; border-radius:8px; font-size:0.85rem; color:var(--text2);">Select a part</span>
+        <span id="invTotalCost" style="background:#dbeafe; color:#1e40af; padding:6px 14px; border-radius:8px; font-size:0.85rem; font-weight:700; font-family:'JetBrains Mono';">Rs. 0</span>
       </div>
       <div style="margin-top:24px;">
         <div class="card-title" style="border:none;padding:0;margin-bottom:12px;">📜 Recent Usage</div>
@@ -403,13 +442,28 @@ tr:hover td { background: #f9fafb; }
       <div class="form-grid">
         <div class="form-group"><label>Vehicle</label><select id="opVehicle"></select></div>
         <div class="form-group"><label>Date</label><input id="opDate" type="date"></div>
-        <div class="form-group" style="grid-column:1/-1;"><label>Part / Item Name</label><input id="opPartName" type="text" placeholder="e.g. Brake Drum, Clutch Plate"></div>
-        <div class="form-group"><label>Qty</label><input id="opQty" type="number" value="1" min="1"></div>
-        <div class="form-group"><label>Unit Price (₹)</label><input id="opPrice" type="number" value="0" step="0.01"></div>
+        <div class="form-group" style="grid-column:1/-1;"><label>Part / Item Name</label><input id="opPartName" type="text" placeholder="e.g. Brake Drum, Engine Oil 15W40"></div>
+        <div class="form-group">
+          <label>Unit Type</label>
+          <select id="opUnit">
+            <option value="pcs" selected>pcs</option>
+            <option value="L">L (Litres)</option>
+            <option value="set">set</option>
+            <option value="drum">drum</option>
+            <option value="bucket">bucket</option>
+            <option value="kg">kg</option>
+            <option value="m">m (metres)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Qty</label><input id="opQty" type="number" value="1" min="0.1" step="0.1"></div>
+        <div class="form-group"><label>Unit Price (Rs.)</label><input id="opPrice" type="number" value="0" step="0.01"></div>
         <div class="form-group"><label>Vendor Name</label><input id="opVendor" type="text" placeholder="Vendor / Shop name"></div>
         <div class="form-group" style="grid-column:1/-1;"><label>Notes</label><input id="opNotes" type="text" placeholder="Invoice no., remarks..."></div>
       </div>
-      <button class="btn btn-amber" style="margin-top:16px;" onclick="recordOutsidePurchase()">💳 Record Purchase</button>
+      <div style="display:flex; align-items:center; gap:12px; margin-top:16px;">
+        <button class="btn btn-amber" onclick="recordOutsidePurchase()">💳 Record Purchase</button>
+        <span id="opTotalCost" style="background:#fef3c7; color:#92400e; padding:6px 14px; border-radius:8px; font-size:0.85rem; font-weight:700; font-family:'JetBrains Mono';">Total: Rs. 0</span>
+      </div>
     </div>
     <div class="card">
       <div class="card-title">📋 Purchase History</div>
@@ -433,8 +487,8 @@ tr:hover td { background: #f9fafb; }
         <div class="form-group"><label>Date Returned</label><input id="orDateReturn" type="date"></div>
         <div class="form-group"><label>Workshop / Garage</label><input id="orWorkshop" type="text" placeholder="Workshop name"></div>
         <div class="form-group" style="grid-column:1/-1;"><label>Repair Description</label><input id="orDesc" type="text" placeholder="e.g. Engine overhaul, Gearbox repair"></div>
-        <div class="form-group"><label>Labour Cost (₹)</label><input id="orLabour" type="number" value="0" step="0.01"></div>
-        <div class="form-group"><label>Parts Cost (₹)</label><input id="orParts" type="number" value="0" step="0.01"></div>
+        <div class="form-group"><label>Labour Cost (Rs.)</label><input id="orLabour" type="number" value="0" step="0.01"></div>
+        <div class="form-group"><label>Parts Cost (Rs.)</label><input id="orParts" type="number" value="0" step="0.01"></div>
         <div class="form-group" style="grid-column:1/-1;"><label>Notes</label><input id="orNotes" type="text" placeholder="Invoice, remarks..."></div>
       </div>
       <button class="btn btn-danger" style="margin-top:16px;" onclick="recordOutsideRepair()">🔧 Log Repair</button>
@@ -486,7 +540,7 @@ tr:hover td { background: #f9fafb; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// ====== DATA ======
+// ====== VEHICLES ======
 const VEHICLES = [
   { reg: 'AP39UQ0095', type: 'tipper' },
   { reg: 'AP39UQ0097', type: 'tipper' },
@@ -506,17 +560,16 @@ const VEHICLES = [
   { reg: 'SL 254360',  type: 'excavator' },
 ];
 
-// Emoji per type
 function vehicleEmoji(type) {
   if(type==='tipper')    return '🚚';
   if(type==='loader')    return '🚜';
   if(type==='excavator') return '⛏️';
   return '🚗';
 }
-// Display label = registration only
 function vehicleLabel(reg) { return reg; }
 function vehicleByReg(reg) { return VEHICLES.find(v=>v.reg===reg)||{reg,type:'other'}; }
 
+// ====== DATA ======
 let parts = loadFromStorage('sgx_parts', [
   { id:'p1',  name:'SDLG Hydraulic Oil',   stock:95,  unit:'L',      lastPrice:450,   lastPurchaseDate:'2025-02-10' },
   { id:'p2',  name:'SDLG Gear Oil',         stock:63,  unit:'L',      lastPrice:600,   lastPurchaseDate:'2025-03-01' },
@@ -550,7 +603,10 @@ function fmtDate(d) {
   if (!d) return '—';
   try { const x=new Date(d); return `${String(x.getDate()).padStart(2,'0')}-${String(x.getMonth()+1).padStart(2,'0')}-${x.getFullYear()}`; } catch { return d; }
 }
+// In-app: show ₹ symbol
 function fmtMoney(n) { return '₹' + Number(n||0).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2}); }
+// PDF-safe: use Rs. to avoid jsPDF encoding issues
+function fmtMoneyPDF(n) { return 'Rs. ' + Number(n||0).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2}); }
 function toast(msg, type='ok') {
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -570,6 +626,23 @@ function populateVehicleSelects() {
   ef.innerHTML = '<option value="">All Vehicles</option>' + VEHICLES.map(v=>`<option value="${v.reg}">${vehicleEmoji(v.type)} ${v.reg}</option>`).join('');
 }
 
+// ====== DELETE MODAL ======
+let _delPending = null;
+function openDelModal(title, sub, cb) {
+  _delPending = cb;
+  document.getElementById('delModalTitle').textContent = title;
+  document.getElementById('delModalSub').textContent = sub;
+  document.getElementById('delModal').classList.add('open');
+}
+function closeDelModal() {
+  _delPending = null;
+  document.getElementById('delModal').classList.remove('open');
+}
+function confirmDelete() {
+  if(_delPending) _delPending();
+  closeDelModal();
+}
+
 // ====== PAGES ======
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -587,20 +660,14 @@ function showPage(id) {
 // ====== HOME ======
 function renderHome() {
   const cm = currentMonth();
-
-  // All-time totals
   const totalSGX = sgxHistory.reduce((s,e)=>(s+(e.priceAtUse||0)*e.quantity),0);
   const totalOP  = outsidePurchases.reduce((s,e)=>(s+(e.unitPrice||0)*e.qty),0);
   const totalOR  = outsideRepairs.reduce((s,e)=>(s+(Number(e.labour)||0)+(Number(e.partsCC)||0)),0);
   const totalAll = totalSGX+totalOP+totalOR;
-
-  // MTD totals
   const mtdSGX = sgxHistory.filter(e=>e.date&&e.date.startsWith(cm)).reduce((s,e)=>s+(e.priceAtUse||0)*e.quantity,0);
   const mtdOP  = outsidePurchases.filter(e=>e.date&&e.date.startsWith(cm)).reduce((s,e)=>s+(e.unitPrice||0)*e.qty,0);
   const mtdOR  = outsideRepairs.filter(e=>e.dateSent&&e.dateSent.startsWith(cm)).reduce((s,e)=>s+Number(e.labour||0)+Number(e.partsCC||0),0);
   const mtdAll = mtdSGX+mtdOP+mtdOR;
-
-  const monthLabel = new Date().toLocaleString('en-IN',{month:'short',year:'numeric'});
 
   document.getElementById('homeStats').innerHTML = `
     <div class="mtd-card mtd-card-total">
@@ -633,22 +700,16 @@ function renderHome() {
     </div>
   `;
 
-  // ---- Date-wise panel ----
   const dateMap = {};
-  const addToDate = (date, amt) => {
-    if(!date) return;
-    const d = date.slice(0,10);
-    dateMap[d] = (dateMap[d]||0) + amt;
-  };
+  const addToDate = (date, amt) => { if(!date) return; const d=date.slice(0,10); dateMap[d]=(dateMap[d]||0)+amt; };
   sgxHistory.forEach(e=>addToDate(e.date, (e.priceAtUse||0)*e.quantity));
   outsidePurchases.forEach(e=>addToDate(e.date, (e.unitPrice||0)*e.qty));
   outsideRepairs.forEach(e=>addToDate(e.dateSent, Number(e.labour||0)+Number(e.partsCC||0)));
 
   const sortedDates = Object.keys(dateMap).sort((a,b)=>b.localeCompare(a));
   const grandDateTotal = Object.values(dateMap).reduce((s,v)=>s+v,0);
-
   let dateHTML = '';
-  if(sortedDates.length===0) {
+  if(!sortedDates.length) {
     dateHTML = '<div class="empty-state"><span class="empty-icon">📭</span>No entries yet</div>';
   } else {
     let running = 0;
@@ -672,16 +733,10 @@ function renderHome() {
     }).join('');
   }
 
-  // ---- Vehicle-type panel ----
   const typeMap = { tipper:{emoji:'🚚',label:'Tippers (12)',total:0,count:0}, loader:{emoji:'🚜',label:'Loaders (2)',total:0,count:0}, excavator:{emoji:'⛏️',label:'Excavators (2)',total:0,count:0} };
-  const addToType = (reg, amt) => {
-    const v = vehicleByReg(reg);
-    if(typeMap[v.type]) { typeMap[v.type].total += amt; typeMap[v.type].count++; }
-  };
-  sgxHistory.forEach(e=>addToType(e.vehicle, (e.priceAtUse||0)*e.quantity));
-  outsidePurchases.forEach(e=>addToType(e.vehicle, (e.unitPrice||0)*e.qty));
-  outsideRepairs.forEach(e=>addToType(e.vehicle, Number(e.labour||0)+Number(e.partsCC||0)));
-
+  sgxHistory.forEach(e=>{ const v=vehicleByReg(e.vehicle); if(typeMap[v.type]){typeMap[v.type].total+=(e.priceAtUse||0)*e.quantity; typeMap[v.type].count++;} });
+  outsidePurchases.forEach(e=>{ const v=vehicleByReg(e.vehicle); if(typeMap[v.type]){typeMap[v.type].total+=(e.unitPrice||0)*e.qty; typeMap[v.type].count++;} });
+  outsideRepairs.forEach(e=>{ const v=vehicleByReg(e.vehicle); if(typeMap[v.type]){typeMap[v.type].total+=Number(e.labour||0)+Number(e.partsCC||0); typeMap[v.type].count++;} });
   const maxType = Math.max(...Object.values(typeMap).map(t=>t.total), 1);
   const typeHTML = Object.entries(typeMap).map(([k,t])=>`
     <div class="vtype-row">
@@ -724,11 +779,22 @@ function renderInventory() {
   const tbody = document.getElementById('invTableBody');
   tbody.innerHTML = parts.map(p=>{
     const status = p.stock<=0 ? '<span class="badge badge-red">Out of stock</span>' : p.stock<=2 ? '<span class="badge badge-amber">Low</span>' : '<span class="badge badge-green">OK</span>';
-    return `<tr><td><strong>${p.name}</strong></td><td class="mono" style="font-weight:600;">${p.stock}</td><td>${p.unit}</td><td class="mono">${fmtMoney(p.lastPrice)}</td><td>${status}</td></tr>`;
+    return `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td class="mono" style="font-weight:600;">${p.stock}</td>
+      <td><span class="unit-pill">${p.unit}</span></td>
+      <td class="mono">${fmtMoney(p.lastPrice)}</td>
+      <td>${status}</td>
+      <td>
+        <button class="btn-icon-del" title="Delete part" onclick="deletePart('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑️</button>
+      </td>
+    </tr>`;
   }).join('');
+
   const select = document.getElementById('invPartSelect');
-  select.innerHTML = parts.map(p=>`<option value="${p.id}">${p.name} (${p.stock} ${p.unit})</option>`).join('');
+  select.innerHTML = parts.map(p=>`<option value="${p.id}">${p.name} (${p.stock} ${p.unit} @ ${fmtMoney(p.lastPrice)}/${p.unit})</option>`).join('');
   updateInvHint();
+
   const low = parts.filter(p=>p.stock<=2).length;
   document.getElementById('invStats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total Parts</div><div class="stat-num">${parts.length}</div></div>
@@ -738,47 +804,84 @@ function renderInventory() {
   `;
 }
 
+function deletePart(id, name) {
+  openDelModal('Delete Part?', `Remove "${name}" from inventory? This does NOT delete usage history.`, ()=>{
+    parts = parts.filter(p=>p.id!==id);
+    save(); renderInventory(); toast('🗑️ Part removed');
+  });
+}
+
 function updateInvHint() {
   const sel = document.getElementById('invPartSelect');
   const opt = sel.options[sel.selectedIndex];
-  const hint = document.getElementById('invStockHint');
+  const hint = document.getElementById('invPriceHintBox');
+  const qtyEl = document.getElementById('invQty');
+  const costEl = document.getElementById('invTotalCost');
   if(opt) {
     const p = parts.find(x=>x.id===opt.value);
-    if(p) hint.textContent = `📦 Stock: ${p.stock} ${p.unit} · ₹${p.lastPrice}/unit`;
+    if(p) {
+      hint.innerHTML = `<strong>📦 Stock:</strong> ${p.stock} <span class="unit-pill">${p.unit}</span> &nbsp;|&nbsp; <strong>Rate:</strong> ${fmtMoney(p.lastPrice)} / ${p.unit} &nbsp;|&nbsp; <strong>Last purchased:</strong> ${fmtDate(p.lastPurchaseDate)}`;
+      document.getElementById('invQtyLabel').textContent = `Qty Used (${p.unit})`;
+      recalcInvCost(p);
+    }
   }
+  // live recalc on qty change
+  qtyEl.oninput = () => {
+    const p2 = parts.find(x=>x.id===(document.getElementById('invPartSelect').value));
+    if(p2) recalcInvCost(p2);
+  };
+}
+
+function recalcInvCost(part) {
+  const qty = parseFloat(document.getElementById('invQty').value)||0;
+  const cost = qty * (part.lastPrice||0);
+  document.getElementById('invTotalCost').textContent = fmtMoney(cost);
 }
 
 function addPart() {
   const name = document.getElementById('newPartName').value.trim();
   if(!name) { toast('Enter part name','err'); return; }
-  const stock = parseInt(document.getElementById('newPartStock').value)||0;
-  const unit  = document.getElementById('newPartUnit').value.trim()||'pcs';
+  const stock = parseFloat(document.getElementById('newPartStock').value)||0;
+  const unit  = document.getElementById('newPartUnit').value||'pcs';
   const price = parseFloat(document.getElementById('newPartPrice').value)||0;
   const date  = document.getElementById('newPartDate').value||today();
   parts.push({ id:genId(), name, stock, unit, lastPrice:price, lastPurchaseDate:date });
   save(); renderInventory();
   document.getElementById('newPartName').value='';
-  document.getElementById('newPartUnit').value='';
   document.getElementById('newPartPrice').value='0';
   document.getElementById('newPartStock').value='1';
-  toast('✅ Part added');
+  toast('✅ Part added to inventory');
 }
 
 function recordSGXUsage() {
-  const sel   = document.getElementById('invPartSelect');
-  const partId= sel.value;
-  const part  = parts.find(p=>p.id===partId);
+  const sel    = document.getElementById('invPartSelect');
+  const partId = sel.value;
+  const part   = parts.find(p=>p.id===partId);
   if(!part) { toast('Select a part','err'); return; }
-  const qty   = parseInt(document.getElementById('invQty').value)||1;
-  if(part.stock < qty) { toast(`Only ${part.stock} ${part.unit} left`,'err'); return; }
+  const qty = parseFloat(document.getElementById('invQty').value)||0;
+  if(qty<=0) { toast('Enter valid quantity','err'); return; }
+  if(part.stock < qty) { toast(`Only ${part.stock} ${part.unit} in stock`,'err'); return; }
   const vehicle = document.getElementById('invVehicle').value;
   const date    = document.getElementById('invDate').value;
   if(!date) { toast('Select date','err'); return; }
   const notes = document.getElementById('invNotes').value.trim();
-  part.stock -= qty;
+  part.stock = parseFloat((part.stock - qty).toFixed(3));
   sgxHistory.push({ id:genId(), type:'sgx', partId:part.id, partName:part.name, vehicle, date, quantity:qty, unit:part.unit, priceAtUse:part.lastPrice, notes });
   save(); renderInventory(); renderSGXHistory(); renderHome();
-  toast(`✅ Recorded: ${part.name} × ${qty}`);
+  toast(`✅ ${part.name} × ${qty} ${part.unit} = ${fmtMoney(qty*part.lastPrice)}`);
+}
+
+function deleteSGXHistory(id) {
+  const entry = sgxHistory.find(e=>e.id===id);
+  if(!entry) return;
+  openDelModal('Delete Usage Entry?', `"${entry.partName} x${entry.quantity}" on ${fmtDate(entry.date)}. Stock will be restored.`, ()=>{
+    // restore stock
+    const part = parts.find(p=>p.id===entry.partId);
+    if(part) part.stock = parseFloat((part.stock + entry.quantity).toFixed(3));
+    sgxHistory = sgxHistory.filter(e=>e.id!==id);
+    save(); renderInventory(); renderSGXHistory(); renderHome();
+    toast('🗑️ Usage entry deleted · stock restored');
+  });
 }
 
 function renderSGXHistory() {
@@ -790,10 +893,11 @@ function renderSGXHistory() {
       <div class="hist-item-dot dot-sgx"></div>
       <div style="flex:1;">
         <div style="font-weight:600; font-size:0.9rem;">${e.partName}</div>
-        <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleEmoji(vehicleByReg(e.vehicle).type)} ${vehicleLabel(e.vehicle)} · ${fmtDate(e.date)} · qty: ${e.quantity} ${e.unit}</div>
+        <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleEmoji(vehicleByReg(e.vehicle).type)} ${vehicleLabel(e.vehicle)} · ${fmtDate(e.date)} · ${e.quantity} ${e.unit||'pcs'}</div>
         ${e.notes?`<div style="font-size:0.78rem;color:var(--text3);">${e.notes}</div>`:''}
       </div>
-      <div style="font-weight:700; color:var(--accent); font-size:0.88rem;">${fmtMoney((e.priceAtUse||0)*e.quantity)}</div>
+      <div style="font-weight:700; color:var(--accent); font-size:0.88rem; margin-right:8px;">${fmtMoney((e.priceAtUse||0)*e.quantity)}</div>
+      <button class="btn-icon-del" onclick="deleteSGXHistory('${e.id}')" title="Delete entry">🗑️</button>
     </div>`).join('');
 }
 
@@ -804,16 +908,28 @@ function recordOutsidePurchase() {
   if(!date) { toast('Select date','err'); return; }
   const partName  = document.getElementById('opPartName').value.trim();
   if(!partName) { toast('Enter part name','err'); return; }
-  const qty       = parseInt(document.getElementById('opQty').value)||1;
+  const qty       = parseFloat(document.getElementById('opQty').value)||1;
   const unitPrice = parseFloat(document.getElementById('opPrice').value)||0;
+  const unit      = document.getElementById('opUnit').value||'pcs';
   const vendor    = document.getElementById('opVendor').value.trim();
   const notes     = document.getElementById('opNotes').value.trim();
-  outsidePurchases.push({ id:genId(), type:'outside-purchase', vehicle, date, partName, qty, unitPrice, vendor, notes });
+  outsidePurchases.push({ id:genId(), type:'outside-purchase', vehicle, date, partName, qty, unitPrice, unit, vendor, notes });
   save(); renderOPHistory(); renderHome();
   ['opPartName','opVendor','opNotes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('opQty').value='1';
   document.getElementById('opPrice').value='0';
-  toast(`✅ Purchase logged: ${partName}`);
+  document.getElementById('opTotalCost').textContent='Total: Rs. 0';
+  toast(`✅ Purchase logged: ${partName} · ${fmtMoney(qty*unitPrice)}`);
+}
+
+function deleteOP(id) {
+  const entry = outsidePurchases.find(e=>e.id===id);
+  if(!entry) return;
+  openDelModal('Delete Purchase Entry?', `"${entry.partName}" on ${fmtDate(entry.date)} — ${fmtMoney((entry.unitPrice||0)*entry.qty)}`, ()=>{
+    outsidePurchases = outsidePurchases.filter(e=>e.id!==id);
+    save(); renderOPHistory(); renderHome();
+    toast('🗑️ Purchase entry deleted');
+  });
 }
 
 function renderOPHistory() {
@@ -826,9 +942,10 @@ function renderOPHistory() {
       <div style="flex:1;">
         <div style="font-weight:600; font-size:0.9rem;">${e.partName}</div>
         <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleEmoji(vehicleByReg(e.vehicle).type)} ${vehicleLabel(e.vehicle)} · ${fmtDate(e.date)} · ${e.vendor||'—'}</div>
-        <div style="font-size:0.78rem; color:var(--text3);">qty ${e.qty} x ${fmtMoney(e.unitPrice)}${e.notes?' · '+e.notes:''}</div>
+        <div style="font-size:0.78rem; color:var(--text3);">${e.qty} ${e.unit||'pcs'} × ${fmtMoney(e.unitPrice)}/${e.unit||'pcs'}${e.notes?' · '+e.notes:''}</div>
       </div>
-      <div style="font-weight:700; color:var(--amber); font-size:0.88rem;">${fmtMoney((e.unitPrice||0)*e.qty)}</div>
+      <div style="font-weight:700; color:var(--amber); font-size:0.88rem; margin-right:8px;">${fmtMoney((e.unitPrice||0)*e.qty)}</div>
+      <button class="btn-icon-del" onclick="deleteOP('${e.id}')" title="Delete entry">🗑️</button>
     </div>`).join('');
 }
 
@@ -853,6 +970,16 @@ function recordOutsideRepair() {
   toast(`✅ Repair logged: ${desc}`);
 }
 
+function deleteOR(id) {
+  const entry = outsideRepairs.find(e=>e.id===id);
+  if(!entry) return;
+  openDelModal('Delete Repair Entry?', `"${entry.desc}" sent on ${fmtDate(entry.dateSent)} — ${fmtMoney(Number(entry.labour||0)+Number(entry.partsCC||0))}`, ()=>{
+    outsideRepairs = outsideRepairs.filter(e=>e.id!==id);
+    save(); renderORHistory(); renderHome();
+    toast('🗑️ Repair entry deleted');
+  });
+}
+
 function renderORHistory() {
   const c = document.getElementById('orHistContainer');
   const items = [...outsideRepairs].reverse();
@@ -867,7 +994,8 @@ function renderORHistory() {
         <div style="font-size:0.8rem; color:var(--text2); margin-top:2px;">${vehicleEmoji(vehicleByReg(e.vehicle).type)} ${vehicleLabel(e.vehicle)} · Sent: ${fmtDate(e.dateSent)} · ${e.workshop||'—'}</div>
         <div style="margin-top:4px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">${returned}<span style="font-size:0.78rem;color:var(--text3);">Labour: ${fmtMoney(e.labour)} · Parts: ${fmtMoney(e.partsCC)}</span>${e.notes?`<span style="font-size:0.78rem;color:var(--text3);">${e.notes}</span>`:''}</div>
       </div>
-      <div style="font-weight:700; color:var(--red); font-size:0.88rem;">${fmtMoney(total)}</div>
+      <div style="font-weight:700; color:var(--red); font-size:0.88rem; margin-right:8px;">${fmtMoney(total)}</div>
+      <button class="btn-icon-del" onclick="deleteOR('${e.id}')" title="Delete entry">🗑️</button>
     </div>`;
   }).join('');
 }
@@ -896,38 +1024,27 @@ function renderExpenses() {
 
   const vData = {};
   VEHICLES.forEach(v=>{ vData[v.reg]={ type:v.type, sgx:0, op:0, or:0 }; });
+  sgxHistory.filter(e=>(!filterType||filterType==='sgx')&&matchFilter(e.vehicle,e.date)).forEach(e=>{ if(vData[e.vehicle]) vData[e.vehicle].sgx+=(e.priceAtUse||0)*e.quantity; });
+  outsidePurchases.filter(e=>(!filterType||filterType==='outside-purchase')&&matchFilter(e.vehicle,e.date)).forEach(e=>{ if(vData[e.vehicle]) vData[e.vehicle].op+=(e.unitPrice||0)*e.qty; });
+  outsideRepairs.filter(e=>(!filterType||filterType==='outside-repair')&&matchFilter(e.vehicle,e.dateSent)).forEach(e=>{ if(vData[e.vehicle]) vData[e.vehicle].or+=Number(e.labour||0)+Number(e.partsCC||0); });
 
-  sgxHistory.filter(e=>(!filterType||filterType==='sgx')&&matchFilter(e.vehicle,e.date)).forEach(e=>{
-    if(vData[e.vehicle]) vData[e.vehicle].sgx += (e.priceAtUse||0)*e.quantity;
-  });
-  outsidePurchases.filter(e=>(!filterType||filterType==='outside-purchase')&&matchFilter(e.vehicle,e.date)).forEach(e=>{
-    if(vData[e.vehicle]) vData[e.vehicle].op += (e.unitPrice||0)*e.qty;
-  });
-  outsideRepairs.filter(e=>(!filterType||filterType==='outside-repair')&&matchFilter(e.vehicle,e.dateSent)).forEach(e=>{
-    if(vData[e.vehicle]) vData[e.vehicle].or += Number(e.labour||0)+Number(e.partsCC||0);
-  });
-
-  // Only vehicles with expenses
   const rows = Object.entries(vData)
     .map(([reg,d])=>({reg,...d,total:d.sgx+d.op+d.or}))
-    .filter(r=>r.total>0 || (filterVehicle && r.reg===filterVehicle));
+    .filter(r=>r.total>0||(filterVehicle&&r.reg===filterVehicle));
 
-  const grandSGX = rows.reduce((s,r)=>s+r.sgx,0);
-  const grandOP  = rows.reduce((s,r)=>s+r.op,0);
-  const grandOR  = rows.reduce((s,r)=>s+r.or,0);
-  const grand    = grandSGX+grandOP+grandOR;
+  const grandSGX=rows.reduce((s,r)=>s+r.sgx,0);
+  const grandOP=rows.reduce((s,r)=>s+r.op,0);
+  const grandOR=rows.reduce((s,r)=>s+r.or,0);
+  const grand=grandSGX+grandOP+grandOR;
 
-  const tableHTML = rows.length === 0
+  const tableHTML = rows.length===0
     ? '<div class="empty-state"><span class="empty-icon">📭</span>No expense data for selected filters</div>'
-    : `<div style="overflow-x:auto;">
-    <table>
+    : `<div style="overflow-x:auto;"><table>
       <thead><tr><th>Vehicle</th><th>SGX Spares</th><th>Outside Purchase</th><th>Outside Repair</th><th>Total</th></tr></thead>
       <tbody>
         ${rows.filter(r=>!filterVehicle||r.reg===filterVehicle).sort((a,b)=>b.total-a.total).map(r=>`
           <tr>
-            <td>
-              <div style="font-weight:600; font-size:0.88rem;">${vehicleEmoji(r.type)} ${r.reg}</div>
-            </td>
+            <td><div style="font-weight:600; font-size:0.88rem;">${vehicleEmoji(r.type)} ${r.reg}</div></td>
             <td class="mono" style="color:var(--accent2);">${r.sgx>0?fmtMoney(r.sgx):'—'}</td>
             <td class="mono" style="color:var(--amber);">${r.op>0?fmtMoney(r.op):'—'}</td>
             <td class="mono" style="color:var(--red);">${r.or>0?fmtMoney(r.or):'—'}</td>
@@ -946,7 +1063,6 @@ function renderExpenses() {
     </table></div>`;
 
   document.getElementById('expenseTable').innerHTML = tableHTML;
-
   document.getElementById('expStats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Grand Total</div><div class="stat-num" style="font-size:1.4rem;">${fmtMoney(grand)}</div></div>
     <div class="stat-card"><div class="stat-label">SGX Spares</div><div class="stat-num" style="font-size:1.3rem; color:var(--accent2);">${fmtMoney(grandSGX)}</div></div>
@@ -955,9 +1071,9 @@ function renderExpenses() {
   `;
 
   const allTx = [
-    ...sgxHistory.map(e=>({...e, _type:'SGX',     _date:e.date,     _vehicle:e.vehicle, _amt:(e.priceAtUse||0)*e.quantity,              _desc:`${e.partName} x${e.quantity}`})),
-    ...outsidePurchases.map(e=>({...e, _type:'OUTSIDE', _date:e.date, _vehicle:e.vehicle, _amt:(e.unitPrice||0)*e.qty,                   _desc:`${e.partName} x${e.qty} (${e.vendor||'—'})`})),
-    ...outsideRepairs.map(e=>({...e,   _type:'REPAIR',  _date:e.dateSent, _vehicle:e.vehicle, _amt:Number(e.labour||0)+Number(e.partsCC||0), _desc:`${e.desc} @ ${e.workshop||'—'}`})),
+    ...sgxHistory.map(e=>({...e, _type:'SGX', _date:e.date, _vehicle:e.vehicle, _amt:(e.priceAtUse||0)*e.quantity, _desc:`${e.partName} x${e.quantity} ${e.unit||'pcs'}`})),
+    ...outsidePurchases.map(e=>({...e, _type:'OUTSIDE', _date:e.date, _vehicle:e.vehicle, _amt:(e.unitPrice||0)*e.qty, _desc:`${e.partName} x${e.qty} ${e.unit||'pcs'} (${e.vendor||'—'})`})),
+    ...outsideRepairs.map(e=>({...e, _type:'REPAIR', _date:e.dateSent, _vehicle:e.vehicle, _amt:Number(e.labour||0)+Number(e.partsCC||0), _desc:`${e.desc} @ ${e.workshop||'—'}`})),
   ]
   .filter(e=>(!filterVehicle||e._vehicle===filterVehicle)&&(!filterMonth||e._date&&e._date.startsWith(filterMonth)))
   .filter(e=>!filterType||e.type===filterType)
@@ -978,7 +1094,7 @@ function renderExpenses() {
     </div>`).join('');
 }
 
-// ====== PDF EXPORT ======
+// ====== PDF EXPORT (Rs. instead of ₹ for reliable rendering) ======
 function downloadExpensePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -986,7 +1102,7 @@ function downloadExpensePDF() {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', {day:'2-digit', month:'long', year:'numeric'});
 
-  // Header
+  // Header bar
   doc.setFillColor(26, 60, 94);
   doc.rect(0, 0, pageW, 28, 'F');
   doc.setTextColor(255,255,255);
@@ -997,7 +1113,7 @@ function downloadExpensePDF() {
   doc.setFont('helvetica','normal');
   doc.text('Maintenance Management System', 14, 18);
   doc.setFontSize(8);
-  doc.text(`Generated: ${dateStr}`, 14, 24);
+  doc.text('Generated: ' + dateStr, 14, 24);
   doc.setTextColor(96,165,250);
   doc.setFontSize(10);
   doc.setFont('helvetica','bold');
@@ -1008,64 +1124,53 @@ function downloadExpensePDF() {
   const totalOR  = outsideRepairs.reduce((s,e)=>s+Number(e.labour||0)+Number(e.partsCC||0),0);
   const grand    = totalSGX+totalOP+totalOR;
 
-  // Summary boxes
+  // Summary boxes — all amounts use fmtMoneyPDF
   const boxY = 33;
   const boxes = [
-    { label:'Grand Total',       val: fmtMoney(grand),    color:[26,60,94] },
-    { label:'SGX Spares',        val: fmtMoney(totalSGX), color:[37,99,235] },
-    { label:'Outside Purchase',  val: fmtMoney(totalOP),  color:[217,119,6] },
-    { label:'Outside Repair',    val: fmtMoney(totalOR),  color:[220,38,38] },
+    { label:'Grand Total',      val: fmtMoneyPDF(grand),    color:[26,60,94] },
+    { label:'SGX Spares',       val: fmtMoneyPDF(totalSGX), color:[37,99,235] },
+    { label:'Outside Purchase', val: fmtMoneyPDF(totalOP),  color:[217,119,6] },
+    { label:'Outside Repair',   val: fmtMoneyPDF(totalOR),  color:[220,38,38] },
   ];
   const bw = (pageW - 28) / 4;
   boxes.forEach((b,i)=>{
     const bx = 14 + i*bw;
     doc.setFillColor(...b.color);
-    doc.roundedRect(bx, boxY, bw-3, 16, 2, 2, 'F');
+    doc.roundedRect(bx, boxY, bw-3, 18, 2, 2, 'F');
     doc.setTextColor(255,255,255);
     doc.setFontSize(7);
     doc.setFont('helvetica','normal');
-    doc.text(b.label, bx+4, boxY+5.5);
-    doc.setFontSize(9);
+    doc.text(b.label, bx+4, boxY+6);
+    doc.setFontSize(9.5);
     doc.setFont('helvetica','bold');
-    doc.text(b.val, bx+4, boxY+12);
+    doc.text(b.val, bx+4, boxY+14);
   });
 
-  // Vehicle expense table — only vehicles WITH expenses
+  // Vehicle expense table
   const vehicleRows = VEHICLES
-    .map(v => {
-      const e = getVehicleExpense(v.reg);
-      return { reg: v.reg, type: v.type, ...e };
-    })
-    .filter(r => r.total > 0)
-    .sort((a,b) => b.total - a.total);
+    .map(v => { const e=getVehicleExpense(v.reg); return { reg:v.reg, type:v.type, ...e }; })
+    .filter(r=>r.total>0)
+    .sort((a,b)=>b.total-a.total);
 
-  const tableBody = vehicleRows.map(r => [
+  const tableBody = vehicleRows.map(r=>[
     r.reg,
-    r.sgx > 0 ? fmtMoney(r.sgx) : '—',
-    r.op  > 0 ? fmtMoney(r.op)  : '—',
-    r.or  > 0 ? fmtMoney(r.or)  : '—',
-    r.total > 0 ? fmtMoney(r.total) : '—',
+    r.sgx>0 ? fmtMoneyPDF(r.sgx) : '-',
+    r.op>0  ? fmtMoneyPDF(r.op)  : '-',
+    r.or>0  ? fmtMoneyPDF(r.or)  : '-',
+    r.total>0 ? fmtMoneyPDF(r.total) : '-',
   ]);
-
-  // Grand total footer row
-  const footerRow = [
-    'GRAND TOTAL',
-    fmtMoney(totalSGX),
-    fmtMoney(totalOP),
-    fmtMoney(totalOR),
-    fmtMoney(grand)
-  ];
+  const footerRow = ['GRAND TOTAL', fmtMoneyPDF(totalSGX), fmtMoneyPDF(totalOP), fmtMoneyPDF(totalOR), fmtMoneyPDF(grand)];
 
   doc.autoTable({
-    startY: boxY + 22,
+    startY: boxY + 24,
     head: [['Vehicle Reg', 'SGX Spares', 'Outside Purchase', 'Outside Repair', 'Total']],
     body: tableBody,
     foot: [footerRow],
     theme: 'grid',
-    headStyles: { fillColor: [26,60,94], textColor:255, fontStyle:'bold', fontSize:8 },
-    footStyles: { fillColor: [240,244,255], textColor:[26,60,94], fontStyle:'bold', fontSize:8 },
-    bodyStyles: { fontSize: 8, cellPadding: 3.5 },
-    alternateRowStyles: { fillColor: [249,250,251] },
+    headStyles: { fillColor:[26,60,94], textColor:255, fontStyle:'bold', fontSize:8 },
+    footStyles: { fillColor:[240,244,255], textColor:[26,60,94], fontStyle:'bold', fontSize:8.5 },
+    bodyStyles: { fontSize:8, cellPadding:3.5 },
+    alternateRowStyles: { fillColor:[249,250,251] },
     columnStyles: {
       0: { cellWidth:48, fontStyle:'bold' },
       1: { halign:'right', textColor:[37,99,235] },
@@ -1078,23 +1183,21 @@ function downloadExpensePDF() {
   // Transaction history
   const finalY = doc.lastAutoTable.finalY + 8;
   const allTx = [
-    ...sgxHistory.map(e=>({_type:'SGX',     _date:e.date,     _vehicle:e.vehicle, _amt:(e.priceAtUse||0)*e.quantity,              _desc:`${e.partName} x${e.quantity}`})),
-    ...outsidePurchases.map(e=>({_type:'PURCHASE', _date:e.date, _vehicle:e.vehicle, _amt:(e.unitPrice||0)*e.qty,                   _desc:`${e.partName} x${e.qty} (${e.vendor||'—'})`})),
-    ...outsideRepairs.map(e=>({_type:'REPAIR',   _date:e.dateSent, _vehicle:e.vehicle, _amt:Number(e.labour||0)+Number(e.partsCC||0), _desc:`${e.desc} @ ${e.workshop||'—'}`})),
+    ...sgxHistory.map(e=>({_type:'SGX', _date:e.date, _vehicle:e.vehicle, _amt:(e.priceAtUse||0)*e.quantity, _desc:`${e.partName} x${e.quantity} ${e.unit||'pcs'}`})),
+    ...outsidePurchases.map(e=>({_type:'PURCHASE', _date:e.date, _vehicle:e.vehicle, _amt:(e.unitPrice||0)*e.qty, _desc:`${e.partName} x${e.qty} ${e.unit||'pcs'} (${e.vendor||'—'})`})),
+    ...outsideRepairs.map(e=>({_type:'REPAIR', _date:e.dateSent, _vehicle:e.vehicle, _amt:Number(e.labour||0)+Number(e.partsCC||0), _desc:`${e.desc} @ ${e.workshop||'—'}`})),
   ].sort((a,b)=>new Date(b._date||0)-new Date(a._date||0)).slice(0,80);
 
   if(allTx.length) {
-    // Check page space; add new page if needed
     const pageH = doc.internal.pageSize.getHeight();
     if(finalY + 20 > pageH - 20) { doc.addPage(); }
     const txStartY = (finalY + 20 > pageH - 20) ? 20 : finalY;
-
     doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(26,60,94);
     doc.text('Transaction History', 14, txStartY);
     doc.autoTable({
       startY: txStartY + 5,
-      head: [['Date','Vehicle Reg','Type','Description','Amount']],
-      body: allTx.map(e=>[fmtDate(e._date), e._vehicle, e._type, e._desc, fmtMoney(e._amt)]),
+      head: [['Date','Vehicle Reg','Type','Description','Amount (Rs.)']],
+      body: allTx.map(e=>[fmtDate(e._date), e._vehicle, e._type, e._desc, fmtMoneyPDF(e._amt)]),
       theme: 'striped',
       headStyles: { fillColor:[26,60,94], textColor:255, fontStyle:'bold', fontSize:7.5 },
       bodyStyles: { fontSize:7, cellPadding:2.5 },
@@ -1103,7 +1206,7 @@ function downloadExpensePDF() {
         1: { cellWidth:32 },
         2: { cellWidth:18 },
         3: { cellWidth:'auto' },
-        4: { halign:'right', cellWidth:28 },
+        4: { halign:'right', cellWidth:30 },
       },
     });
   }
@@ -1122,6 +1225,14 @@ function downloadExpensePDF() {
   toast('✅ PDF exported!');
 }
 
+// ====== LIVE TOTAL for Outside Purchase ======
+function recalcOPTotal() {
+  const qty = parseFloat(document.getElementById('opQty').value)||0;
+  const price = parseFloat(document.getElementById('opPrice').value)||0;
+  const unit = document.getElementById('opUnit').value||'pcs';
+  document.getElementById('opTotalCost').textContent = `Total: ${fmtMoney(qty*price)} (${qty} ${unit})`;
+}
+
 // ====== SPLASH ======
 function runSplash() {
   const partEmojis = ['⚙️','🔩','🔧','🪛','🔑','⛽','🛢️','🔌','💡','🪝','🔗','🛞'];
@@ -1136,7 +1247,6 @@ function runSplash() {
     el.style.animationDelay   = (i * 0.4) + 's';
     orbit.appendChild(el);
   });
-
   const convParts = ['⚙️ GEAR','🔩 BOLT','🛞 TYRE','🔧 WRENCH','🛢️ OIL','💡 BULB','🔌 FILTER','🪛 DRIVER','🔑 KEY','⛽ FUEL'];
   const track = document.getElementById('conveyorTrack');
   [...convParts, ...convParts].forEach(p => {
@@ -1146,7 +1256,6 @@ function runSplash() {
     d.innerHTML = `${emoji} <span>${name}</span>`;
     track.appendChild(d);
   });
-
   const asmRow = document.getElementById('asmRow');
   const asmParts = [
     { emoji:'🔩', delay:0.5 },
@@ -1159,20 +1268,12 @@ function runSplash() {
   ];
   asmParts.forEach(p => {
     const el = document.createElement('div');
-    if(p.arrow) {
-      el.className = 'asm-arrow';
-      el.textContent = '→';
-    } else if(p.truck) {
-      el.className = 'truck-assembled';
-      el.textContent = p.emoji;
-    } else {
-      el.className = 'asm-part';
-      el.textContent = p.emoji;
-    }
+    if(p.arrow) { el.className='asm-arrow'; el.textContent='→'; }
+    else if(p.truck) { el.className='truck-assembled'; el.textContent=p.emoji; }
+    else { el.className='asm-part'; el.textContent=p.emoji; }
     el.style.animationDelay = p.delay + 's';
     asmRow.appendChild(el);
   });
-
   const pc = document.getElementById('splashPlates');
   VEHICLES.forEach((v,i)=>{
     setTimeout(()=>{
@@ -1182,7 +1283,6 @@ function runSplash() {
       pc.appendChild(s);
     }, i*70 + 400);
   });
-
   setTimeout(()=>{
     const sp = document.getElementById('splash');
     sp.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
@@ -1199,6 +1299,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('newPartDate').value = today();
   populateVehicleSelects();
   document.getElementById('invPartSelect').addEventListener('change', updateInvHint);
+
+  // Live total calc for outside purchase
+  ['opQty','opPrice','opUnit'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input', recalcOPTotal);
+    document.getElementById(id)?.addEventListener('change', recalcOPTotal);
+  });
+
   runSplash();
 });
 </script>
